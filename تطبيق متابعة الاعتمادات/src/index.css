@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", "Inter", sans-serif;
+  --font-serif: "Amiri", serif;
+  
+  /* Premium Islamic Palette */
+  --color-brand-emerald: #064e3b;
+  --color-brand-gold: #c5a059;
+  --color-brand-gold-light: #e6d5b8;
+  --color-brand-beige: #fdfbf7;
+  
+  --color-primary: var(--color-brand-emerald);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-brand-gold);
+  --color-secondary-foreground: #ffffff;
+  
+  --color-accent: var(--color-brand-gold);
+  --color-accent-foreground: #ffffff;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+@layer base {
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+
+  body {
+    @apply font-sans bg-brand-beige text-slate-900;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-xl shadow-slate-200/50;
+  }
+
+  .islamic-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c5a059' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4v-4H4v4H0v2h4v4h2v-4h4v-2H6zm30 0v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .islamic-border {
+    border-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z' fill='%23c5a059'/%3E%3C/svg%3E") 10;
+    border-width: 2px;
+    border-style: solid;
+  }
+
+  .gold-gradient {
+    @apply bg-gradient-to-br from-brand-gold to-brand-gold-light;
+  }
+  
+  .emerald-gradient {
+    @apply bg-gradient-to-br from-[#064e3b] to-[#0d9488];
+  }
+}
