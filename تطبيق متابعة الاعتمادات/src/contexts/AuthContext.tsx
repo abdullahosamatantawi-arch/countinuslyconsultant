@@ -77,6 +77,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('mosque_app_user');
     };
 
+    // Auto-logout after 10 minutes of inactivity
+    useEffect(() => {
+        let timeoutId: any;
+
+        const resetTimer = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (user) {
+                // 10 minutes = 600,000 ms
+                timeoutId = setTimeout(() => {
+                    console.log('Inactivity detected. Logging out...');
+                    logout();
+                }, 600000);
+            }
+        };
+
+        if (user) {
+            // Initial timer setup
+            resetTimer();
+
+            // Event listeners to detect activity
+            window.addEventListener('mousemove', resetTimer);
+            window.addEventListener('mousedown', resetTimer);
+            window.addEventListener('keydown', resetTimer);
+            window.addEventListener('scroll', resetTimer);
+            window.addEventListener('touchstart', resetTimer);
+            window.addEventListener('click', resetTimer);
+        }
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            window.removeEventListener('mousemove', resetTimer);
+            window.removeEventListener('mousedown', resetTimer);
+            window.removeEventListener('keydown', resetTimer);
+            window.removeEventListener('scroll', resetTimer);
+            window.removeEventListener('touchstart', resetTimer);
+            window.removeEventListener('click', resetTimer);
+        };
+    }, [user]);
+
     return (
         <AuthContext.Provider value={{ user, login, logout, isLoading }}>
             {children}
