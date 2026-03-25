@@ -359,6 +359,58 @@
             font-weight: 600;
         }
 
+        /* ===== Previous Progress Display ===== */
+        .previous-progress {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--border-radius-sm);
+            width: fit-content;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .previous-progress.hidden {
+            display: none;
+        }
+
+        .previous-progress .label {
+            color: var(--clr-text-secondary);
+        }
+
+        .previous-progress .value {
+            font-weight: 700;
+            color: var(--clr-primary);
+            font-size: 1.1rem;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Loading animation for previous progress */
+        .previous-progress.fetching .value::after {
+            content: '...';
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        /* ===== Progress Bar ===== */
         .progress-bar-container {
             height: 6px;
             background: rgba(255, 255, 255, 0.1);
@@ -843,6 +895,11 @@
                             placeholder="أدخل النسبة المئوية">
                         <span class="percent-sign">%</span>
                     </div>
+                    <!-- New Element for Previous Progress -->
+                    <div id="previous-progress-container" class="previous-progress hidden">
+                        <span class="label">نسبة الإنجاز بموجب آخر تقرير: </span>
+                        <span id="previous-progress-value" class="value">--</span>
+                    </div>
                     <div class="progress-bar-container">
                         <div class="progress-bar" id="progress-bar"></div>
                     </div>
@@ -902,6 +959,9 @@
         </div>
     </main>
 
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <script>
         /**
          * ادارة بناء ورعاية المساجد - التقارير اليومية
@@ -909,20 +969,21 @@
          */
 
         const FORM_URL = 'https://n8n.srv968918.hstgr.cloud/webhook/form_new2026';
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dhyw_gFmT0_0d_wzNnCBFDgchUvnlJoSd3U2Ni42CWg/export?format=csv&gid=0';
 
         // Data organized by region
         const formData = {
             'الشارقه': {
                 engineers: ['م/عبيد الياسي', 'م/محمد عاطف', 'م/عبدالرحمن الطنطاوي', 'م/محمد طارق'],
-                plots: ['276', '592', '561', '792', '970', 'A/47', 'A/617', 'A/763', '2564', '5088', '6519', '7777', '7466', '131', '814-812', '863-865', '10632', '5624', '1489', '411', '822', '167', '2454', '9267', '4772', '5882', '7253', '7243', '106', '266', '291', '74']
+                plots: ['276', '592', '561', '792', '970', 'A/47', 'A/763', '2564', '5088', '6519', '7777', '7466', '814-812', '863-865', '10632', '5624', '1489', '822', '2454', '9267', '4772', '5882', '106', '266', '74']
             },
             'المنطقه الوسطى': {
                 engineers: ['م/محمد حمدي'],
-                plots: ['3726', '2856', 'C/5191', '877', 'A/3151', '476', '6003', '498', 'B/11', '1448', '1133', '6269', '625', '285', '619', '44', '561', '82']
+                plots: ['3726', '2856', '877', '476', '6003', '498', '1448', '1133', '6269', '625', '285', '619', '44', '561', '82']
             },
             'المنطقه الشرقيه': {
-                engineers: ['م/بابكر الطيب', 'م/موزه الزعابي'],
-                plots: ['71', 'M2673', '1148M', '1188', '1863', '243', '2/323', '777', '90', '81/2', '838', 'الطريف 4', '620', 'M1706', '9']
+                engineers: ['م/بابكر الطيب'],
+                plots: ['71', 'M2673', '1148M', '1863', '243', '2/323', '777', '90', '81/2', '838', 'الطريف 4', '620', 'M1706', '9']
             }
         };
 
@@ -942,8 +1003,107 @@
         const fileDropZone = document.getElementById('file-drop-zone');
         const filePreview = document.getElementById('file-preview');
 
+        // Previous Progress Elements
+        const previousProgressContainer = document.getElementById('previous-progress-container');
+        const previousProgressValue = document.getElementById('previous-progress-value');
+
         // Store selected files
         let selectedFiles = [];
+
+        // Store Sheet Data
+        let sheetData = [];
+
+        /**
+         * Fetch and Parse Google Sheet Data
+         */
+        function fetchSheetData() {
+            console.log('📥 Fetching sheet data from:', SHEET_URL);
+
+            // Set a timeout to catch silent CORS failures
+            const fetchTimeout = setTimeout(() => {
+                if (sheetData.length === 0) {
+                    console.warn('⚠️ Fetch timeout: Data taking too long to load. Likely CORS restriction.');
+                    sheetData = 'TIMEOUT';
+                    if (plotSelect.value) {
+                        checkPreviousProgress();
+                    }
+                }
+            }, 5000);
+
+            Papa.parse(SHEET_URL, {
+                download: true,
+                header: true,
+                complete: function (results) {
+                    clearTimeout(fetchTimeout);
+                    console.log('✅ Sheet data loaded:', results.data.length, 'rows');
+                    sheetData = results.data;
+
+                    if (plotSelect.value) {
+                        checkPreviousProgress();
+                    }
+                },
+                error: function (err) {
+                    clearTimeout(fetchTimeout);
+                    console.error('❌ Error fetching sheet data:', err);
+                    sheetData = 'ERROR';
+                    if (plotSelect.value) {
+                        checkPreviousProgress();
+                    }
+                }
+            });
+        }
+
+        /**
+         * Check for Previous Progress based on Plot Number
+         */
+        function checkPreviousProgress() {
+            const currentPlot = plotSelect.value;
+
+            if (!currentPlot) {
+                previousProgressContainer.classList.add('hidden');
+                return;
+            }
+
+            // Case: Fetch Error or Timeout (CORS or Network)
+            if (sheetData === 'ERROR' || sheetData === 'TIMEOUT') {
+                previousProgressContainer.classList.remove('hidden', 'fetching');
+                previousProgressValue.textContent = 'يتطلب تشغيل السيرفر المحلي (Local Server)';
+                previousProgressValue.style.color = '#ef4444';
+                return;
+            }
+
+            // Case: Still Fetching
+            if (sheetData.length === 0) {
+                previousProgressContainer.classList.remove('hidden');
+                previousProgressContainer.classList.add('fetching');
+                previousProgressValue.textContent = 'جاري التحميل';
+                previousProgressValue.style.color = '';
+                return;
+            }
+
+            previousProgressContainer.classList.remove('fetching');
+            previousProgressValue.style.color = '';
+
+            // Find the row with matching plot number
+            const matchedRow = sheetData.find(row => {
+                const plotValue = row['رقم القطعة'] || row['رقم القطعه'] || row['Plot Number'];
+                if (plotValue) {
+                    return String(plotValue).trim() === String(currentPlot).trim();
+                }
+                return false;
+            });
+
+            if (matchedRow) {
+                const progressValue = matchedRow['نسبة الإنجاز'] || matchedRow['نسبة الانجاز'] || matchedRow['Progress'];
+                if (progressValue !== undefined && progressValue !== '') {
+                    previousProgressValue.textContent = progressValue + '%';
+                    previousProgressContainer.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            previousProgressContainer.classList.add('hidden');
+        }
 
         /**
          * Populate a select element with options
@@ -985,6 +1145,8 @@
                 populateSelect(plotSelect, [], 'اختر رقم القطعة...');
                 plotSelect.disabled = true;
             }
+            // Hide previous progress on region change
+            previousProgressContainer.classList.add('hidden');
         }
 
         // Validation Rules
@@ -1205,11 +1367,17 @@
         // Region change - populate dependent dropdowns
         regionSelect.addEventListener('change', handleRegionChange);
 
+        // Plot change - check previous progress
+        plotSelect.addEventListener('change', checkPreviousProgress);
+
         // Validation on change/blur
         [regionSelect, engineerSelect, plotSelect, workTextarea, progressInput].forEach((input) => {
             input.addEventListener('change', () => validateInput(input));
             input.addEventListener('blur', () => validateInput(input));
         });
+
+        // Initialize Data
+        fetchSheetData();
 
         // Progress bar update
         progressInput.addEventListener('input', updateProgressBar);

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المساعد الذكي - إدارة بناء ورعاية المساجد</title>
+    <meta name="description"
+        content="المساعد الذكي الرسمي لإدارة بناء ورعاية المساجد - دائرة الشؤون الإسلامية بالشارقة">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">🕌</div>
+                    <div class="header-text">
+                        <h1 class="main-title">إدارة بناء ورعاية المساجد</h1>
+                        <p class="subtitle">دائرة الشؤون الإسلامية بالشارقة</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Screen -->
+            <div id="welcomeScreen" class="screen active">
+                <div class="welcome-card">
+                    <div class="welcome-icon">✨</div>
+                    <h2 class="welcome-title">أهلاً وسهلاً بكم في المساعد الذكي</h2>
+                    <p class="welcome-subtitle">الخاص بإدارة بناء ورعاية المساجد</p>
+                    <p class="welcome-description">يرجى اختيار الخدمة المطلوبة من القائمة التالية:</p>
+
+                    <div class="services-grid">
+                        <button class="service-btn" onclick="showScreen('cemeteryVisitScreen')">
+                            <div class="service-icon">🪦</div>
+                            <h3>زيارة المقابر</h3>
+                            <p>حجز موعد لزيارة المقابر</p>
+                        </button>
+
+                        <button class="service-btn" onclick="showScreen('prayerTimesScreen')">
+                            <div class="service-icon">⏰</div>
+                            <h3>مواقيت الصلاة</h3>
+                            <p>الاطلاع على مواقيت الصلاة</p>
+                        </button>
+
+                        <button class="service-btn" onclick="showScreen('mosqueExpansionScreen')">
+                            <div class="service-icon">📋</div>
+                            <h3>طلب توسعة مسجد</h3>
+                            <p>تقديم طلب لتوسعة مسجد</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cemetery Visit Form -->
+            <div id="cemeteryVisitScreen" class="screen">
+                <div class="form-card">
+                    <button class="back-btn" onclick="showScreen('welcomeScreen')">← العودة</button>
+                    <div class="form-header">
+                        <div class="form-icon">🪦</div>
+                        <h2>حجز زيارة المقابر</h2>
+                        <p>يرجى تعبئة النموذج التالي لحجز موعد الزيارة</p>
+                    </div>
+
+                    <form id="cemeteryForm" class="form">
+                        <div class="form-group">
+                            <label for="cemetery_name">الاسم الكامل <span class="required">*</span></label>
+                            <input type="text" id="cemetery_name" name="name" required
+                                placeholder="الرجاء إدخال الاسم الكامل">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cemetery_phone">رقم الهاتف <span class="required">*</span></label>
+                            <input type="tel" id="cemetery_phone" name="phone" required placeholder="05XXXXXXXX"
+                                pattern="[0-9]{10}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cemetery_date">تاريخ الزيارة <span class="required">*</span></label>
+                            <input type="date" id="cemetery_date" name="date" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cemetery_location">الموقع <span class="required">*</span></label>
+                            <input type="text" id="cemetery_location" name="location" value="الشارقة" readonly required>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <span>إرسال الطلب</span>
+                            <span class="btn-icon">✓</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Prayer Times Screen -->
+            <div id="prayerTimesScreen" class="screen">
+                <div class="form-card">
+                    <button class="back-btn" onclick="showScreen('welcomeScreen')">← العودة</button>
+                    <div class="form-header">
+                        <div class="form-icon">⏰</div>
+                        <h2>مواقيت الصلاة</h2>
+                        <p>مواقيت الصلاة في الشارقة</p>
+                    </div>
+
+                    <div id="prayerTimesDisplay" class="prayer-times-container">
+                        <div class="prayer-times-header">
+                            <h3 id="selectedCity">مواقيت الصلاة</h3>
+                            <p class="prayer-date" id="prayerDate"></p>
+                        </div>
+
+                        <div class="prayer-times-grid">
+                            <div class="prayer-time-card">
+                                <div class="prayer-name">الفجر</div>
+                                <div class="prayer-time" id="fajr">05:15</div>
+                            </div>
+                            <div class="prayer-time-card">
+                                <div class="prayer-name">الشروق</div>
+                                <div class="prayer-time" id="sunrise">06:42</div>
+                            </div>
+                            <div class="prayer-time-card highlight">
+                                <div class="prayer-name">الظهر</div>
+                                <div class="prayer-time" id="dhuhr">12:28</div>
+                            </div>
+                            <div class="prayer-time-card">
+                                <div class="prayer-name">العصر</div>
+                                <div class="prayer-time" id="asr">15:48</div>
+                            </div>
+                            <div class="prayer-time-card">
+                                <div class="prayer-name">المغرب</div>
+                                <div class="prayer-time" id="maghrib">18:14</div>
+                            </div>
+                            <div class="prayer-time-card">
+                                <div class="prayer-name">العشاء</div>
+                                <div class="prayer-time" id="isha">19:44</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mosque Expansion Form -->
+            <div id="mosqueExpansionScreen" class="screen">
+                <div class="form-card">
+                    <button class="back-btn" onclick="showScreen('welcomeScreen')">← العودة</button>
+                    <div class="form-header">
+                        <div class="form-icon">📋</div>
+                        <h2>طلب توسعة مسجد</h2>
+                        <p>يرجى تعبئة النموذج التالي لتقديم طلب توسعة المسجد</p>
+                    </div>
+
+                    <form id="mosqueExpansionForm" class="form">
+                        <div class="form-group">
+                            <label for="mosque_name">اسم المسجد <span class="required">*</span></label>
+                            <input type="text" id="mosque_name" name="mosque_name" required
+                                placeholder="الرجاء إدخال اسم المسجد">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mosque_location">الموقع <span class="required">*</span></label>
+                            <input type="text" id="mosque_location" name="location" required
+                                placeholder="المنطقة - الشارع">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mosque_details">تفاصيل الطلب <span class="required">*</span></label>
+                            <textarea id="mosque_details" name="details" required rows="5"
+                                placeholder="الرجاء ذكر تفاصيل الطلب والأسباب الداعية للتوسعة"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mosque_phone">رقم التواصل <span class="required">*</span></label>
+                            <input type="tel" id="mosque_phone" name="contact_phone" required placeholder="05XXXXXXXX"
+                                pattern="[0-9]{10}">
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <span>إرسال الطلب</span>
+                            <span class="btn-icon">✓</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="success-modal hidden">
+                <div class="success-content">
+                    <div class="success-icon">✓</div>
+                    <h3>تم إرسال الطلب بنجاح</h3>
+                    <p>سيتم التواصل معكم في أقرب وقت ممكن</p>
+                    <button class="primary-btn" onclick="hideSuccess()">العودة للخدمات</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 دائرة الشؤون الإسلامية بالشارقة - جميع الحقوق محفوظة</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

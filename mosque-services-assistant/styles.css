@@ -1,0 +1,1080 @@
+:root {
+    /* Premium Government Color Palette */
+    --primary-color: #0a5c44;
+    --primary-light: #0f8c69;
+    --primary-dark: #063d2e;
+    --primary-ultra-light: #e8f5f1;
+    --secondary-color: #c7a86a;
+    --accent-color: #d4af37;
+    --accent-light: #f0e6c8;
+
+    /* Neutrals with depth */
+    --text-primary: #1a2332;
+    --text-secondary: #4a5568;
+    --text-light: #718096;
+    --text-lighter: #a0aec0;
+    --bg-primary: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    --bg-secondary: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-overlay: rgba(10, 92, 68, 0.02);
+
+    /* Advanced Shadows */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+    --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.20);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-glow: 0 0 24px rgba(10, 92, 68, 0.15);
+
+    /* Premium Gradients */
+    --gradient-primary: linear-gradient(135deg, #0a5c44 0%, #0f8c69 50%, #0a5c44 100%);
+    --gradient-gold: linear-gradient(135deg, #c7a86a 0%, #d4af37 50%, #c7a86a 100%);
+    --gradient-overlay: linear-gradient(135deg, rgba(10, 92, 68, 0.03) 0%, rgba(199, 168, 106, 0.03) 100%);
+    --gradient-shine: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    --gradient-mesh: radial-gradient(circle at 20% 50%, rgba(10, 92, 68, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(199, 168, 106, 0.08) 0%, transparent 50%);
+
+    /* Border Radius System */
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-2xl: 32px;
+    --radius-full: 9999px;
+
+    /* Spacing System */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 0.75rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Typography */
+    --font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 2rem;
+    --font-size-4xl: 2.5rem;
+
+    /* Animation Timings */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.7;
+    direction: rtl;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-mesh);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   HEADER - Premium Design with Islamic Pattern
+   ============================================ */
+
+.header {
+    background: var(--gradient-primary);
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    border-bottom: 3px solid rgba(212, 175, 55, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255, 255, 255, 0.03) 35px, rgba(255, 255, 255, 0.03) 70px);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: float-slow 20s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(-30px, -30px) rotate(120deg);
+    }
+
+    66% {
+        transform: translate(30px, -40px) rotate(240deg);
+    }
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+}
+
+.logo-icon {
+    font-size: 4.5rem;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+    animation: float-gentle 4s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes float-gentle {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-12px) scale(1.05);
+    }
+}
+
+.header-text {
+    color: white;
+    flex: 1;
+}
+
+.main-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    margin-bottom: var(--spacing-xs);
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    letter-spacing: -0.5px;
+    position: relative;
+    display: inline-block;
+}
+
+.main-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 0;
+    width: 60%;
+    height: 3px;
+    background: var(--gradient-gold);
+    border-radius: var(--radius-full);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+}
+
+.subtitle {
+    font-size: var(--font-size-lg);
+    font-weight: 500;
+    opacity: 0.95;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   MAIN CONTENT - Modern Layout
+   ============================================ */
+
+.main-content {
+    flex: 1;
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Screen Management with Smooth Transitions */
+.screen {
+    display: none;
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   WELCOME SCREEN - Premium Hero Section
+   ============================================ */
+
+.welcome-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    box-shadow: var(--shadow-2xl);
+    text-align: center;
+    background-image: var(--gradient-overlay);
+    border: 1px solid rgba(10, 92, 68, 0.1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+}
+
+.welcome-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: var(--gradient-shine);
+    animation: shine 10s ease-in-out infinite;
+}
+
+@keyframes shine {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(50%);
+    }
+}
+
+.welcome-icon {
+    font-size: 5rem;
+    margin-bottom: var(--spacing-lg);
+    display: inline-block;
+    animation: pulse-glow 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.5));
+    }
+
+    50% {
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 30px rgba(212, 175, 55, 0.8));
+    }
+}
+
+.welcome-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 900;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.3;
+}
+
+.welcome-subtitle {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.welcome-description {
+    font-size: var(--font-size-lg);
+    color: var(--text-light);
+    margin-bottom: var(--spacing-2xl);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ============================================
+   SERVICES GRID - Modern Card Design
+   ============================================ */
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--spacing-xl);
+    margin-top: var(--spacing-2xl);
+}
+
+.service-btn {
+    background: white;
+    border: 2px solid transparent;
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    cursor: pointer;
+    transition: all var(--transition-slow);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+}
+
+.service-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-slow);
+    z-index: 0;
+}
+
+.service-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-slow);
+    pointer-events: none;
+}
+
+.service-btn:hover::before {
+    opacity: 1;
+}
+
+.service-btn:hover::after {
+    opacity: 1;
+    animation: ripple 1.5s ease-out infinite;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+.service-btn:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: var(--shadow-2xl), var(--shadow-glow);
+    border-color: var(--accent-color);
+}
+
+.service-btn>* {
+    position: relative;
+    z-index: 1;
+}
+
+.service-icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-lg);
+    transition: transform var(--transition-bounce);
+    display: inline-block;
+}
+
+.service-btn:hover .service-icon {
+    transform: scale(1.2) rotate(5deg);
+}
+
+.service-btn h3 {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-sm);
+    transition: color var(--transition-base);
+}
+
+.service-btn p {
+    font-size: var(--font-size-base);
+    color: var(--text-light);
+    transition: color var(--transition-base);
+    line-height: 1.6;
+}
+
+.service-btn:hover h3,
+.service-btn:hover p {
+    color: white;
+}
+
+/* ============================================
+   FORM CARD - Glassmorphism Design
+   ============================================ */
+
+.form-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-2xl);
+    box-shadow: var(--shadow-2xl);
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(10, 92, 68, 0.1);
+}
+
+.back-btn {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    margin-bottom: var(--spacing-xl);
+    font-family: var(--font-family);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.back-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateX(8px);
+    box-shadow: var(--shadow-md);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+    position: relative;
+}
+
+.form-icon {
+    font-size: 5rem;
+    margin-bottom: var(--spacing-lg);
+    display: inline-block;
+    animation: bounce-soft 2s ease-in-out infinite;
+}
+
+@keyframes bounce-soft {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.form-header h2 {
+    font-size: var(--font-size-3xl);
+    font-weight: 900;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-header p {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   FORM ELEMENTS - Modern Inputs
+   ============================================ */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    position: relative;
+}
+
+.form-group label {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    color: var(--text-primary);
+    padding-right: var(--spacing-xs);
+}
+
+.required {
+    color: #e53e3e;
+    font-weight: 900;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border: 2px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    transition: all var(--transition-base);
+    background: white;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-xs);
+}
+
+.form-group input[readonly] {
+    background: var(--primary-ultra-light);
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: not-allowed;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(10, 92, 68, 0.1), var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 140px;
+    line-height: 1.7;
+}
+
+.submit-btn {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    margin-top: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+    font-family: var(--font-family);
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.submit-btn:hover::before {
+    width: 400px;
+    height: 400px;
+}
+
+.submit-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-2xl), var(--shadow-glow);
+}
+
+.submit-btn:active {
+    transform: translateY(-2px);
+}
+
+.btn-icon {
+    font-size: var(--font-size-2xl);
+    transition: transform var(--transition-bounce);
+}
+
+.submit-btn:hover .btn-icon {
+    transform: scale(1.3) rotate(360deg);
+}
+
+/* ============================================
+   PRAYER TIMES - Premium Display
+   ============================================ */
+
+.prayer-times-container {
+    margin-top: var(--spacing-2xl);
+    padding: var(--spacing-2xl);
+    background: var(--gradient-overlay);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(10, 92, 68, 0.1);
+}
+
+.prayer-times-header {
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+}
+
+.prayer-times-header h3 {
+    font-size: var(--font-size-2xl);
+    font-weight: 900;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-sm);
+}
+
+.prayer-date {
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+}
+
+.prayer-times-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.prayer-time-card {
+    background: white;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.prayer-time-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-gold);
+    transform: scaleX(0);
+    transition: transform var(--transition-base);
+}
+
+.prayer-time-card:hover::before {
+    transform: scaleX(1);
+}
+
+.prayer-time-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-light);
+}
+
+.prayer-time-card.highlight {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: var(--shadow-xl), var(--shadow-glow);
+    transform: scale(1.05);
+    border-color: var(--accent-color);
+}
+
+.prayer-time-card.highlight::before {
+    transform: scaleX(1);
+    background: var(--gradient-gold);
+    height: 6px;
+}
+
+.prayer-name {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
+
+.prayer-time {
+    font-size: var(--font-size-2xl);
+    font-weight: 900;
+    direction: ltr;
+}
+
+.prayer-time-card.highlight .prayer-name,
+.prayer-time-card.highlight .prayer-time {
+    color: white;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   SUCCESS MODAL - Modern Overlay
+   ============================================ */
+
+.success-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    animation: fadeIn var(--transition-base);
+}
+
+.success-modal.hidden {
+    display: none;
+}
+
+.success-content {
+    background: white;
+    padding: var(--spacing-2xl);
+    border-radius: var(--radius-2xl);
+    text-align: center;
+    max-width: 520px;
+    box-shadow: var(--shadow-2xl);
+    animation: slideUpBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border: 3px solid var(--accent-color);
+}
+
+@keyframes slideUpBounce {
+    from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.success-icon {
+    width: 100px;
+    height: 100px;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: white;
+    margin: 0 auto var(--spacing-xl);
+    animation: scaleInPulse 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: var(--shadow-xl), var(--shadow-glow);
+}
+
+@keyframes scaleInPulse {
+    0% {
+        transform: scale(0);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.success-content h3 {
+    font-size: var(--font-size-2xl);
+    font-weight: 900;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-md);
+}
+
+.success-content p {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-2xl);
+    line-height: 1.7;
+}
+
+.primary-btn {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-family);
+    box-shadow: var(--shadow-md);
+}
+
+.primary-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* ============================================
+   FOOTER - Elegant Design
+   ============================================ */
+
+.footer {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+    color: white;
+    text-align: center;
+    padding: var(--spacing-xl);
+    margin-top: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-gold);
+}
+
+.footer p {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .services-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--spacing-lg);
+    }
+
+    .prayer-times-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --spacing-2xl: 2rem;
+        --font-size-3xl: 1.75rem;
+        --font-size-2xl: 1.35rem;
+    }
+
+    .header {
+        padding: var(--spacing-xl) var(--spacing-lg);
+    }
+
+    .logo-icon {
+        font-size: 3rem;
+    }
+
+    .main-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .subtitle {
+        font-size: var(--font-size-base);
+    }
+
+    .welcome-card {
+        padding: var(--spacing-xl) var(--spacing-lg);
+    }
+
+    .welcome-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .services-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .service-btn {
+        padding: var(--spacing-xl);
+    }
+
+    .form-card {
+        padding: var(--spacing-xl) var(--spacing-lg);
+    }
+
+    .prayer-times-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+
+    .success-content {
+        margin: var(--spacing-lg);
+        padding: var(--spacing-xl);
+    }
+
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    .submit-btn {
+        padding: var(--spacing-md) var(--spacing-xl);
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+
+    .back-btn,
+    .submit-btn,
+    .header,
+    .footer {
+        display: none;
+    }
+
+    .form-card {
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    body::before {
+        display: none;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+
+    .service-btn,
+    .form-card,
+    .prayer-time-card {
+        border: 2px solid var(--text-primary);
+    }
+}
