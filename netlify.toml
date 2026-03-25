@@ -1,6 +1,7 @@
 [build]
-  command = "npm run build"
+  base = "تطبيق متابعة الاعتمادات"
   publish = "dist"
+  command = "npm run build"
 
 [[redirects]]
   from = "/n8n-webhook"
