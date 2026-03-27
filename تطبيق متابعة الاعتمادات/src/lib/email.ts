@@ -1,9 +1,9 @@
 export const sendWelcomeEmail = async (email: string, name: string, password: string) => {
     // Switching to n8n as requested by the user
-    const N8N_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
+    const N8N_URL = import.meta.env.VITE_N8N_EMAIL_WEBHOOK_URL;
     
     if (!N8N_URL) {
-        console.warn('Email was not sent because VITE_N8N_WEBHOOK_URL is not set in .env');
+        console.warn('Email was not sent because VITE_N8N_EMAIL_WEBHOOK_URL is not set in .env');
         return false;
     }
 

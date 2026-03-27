@@ -1,66 +1,65 @@
-export type ProjectStatus = 'pending_approval' | 'under_construction' | 'completed' | 'delayed';
-export type UserRole = 'manager' | 'consultant' | 'engineer';
+export type UserRole = 'admin' | 'engineer' | 'consultant';
+export type ProjectStatus = 'draft' | 'pending_approval' | 'under_construction' | 'completed' | 'cancelled';
+export type StageType = 'architectural' | 'structural' | 'mep' | 'civil_defense' | 'planning';
+export type StageStatus = 'pending_submission' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'requires_modification';
+export type SubmissionStatus = 'under_review' | 'approved' | 'rejected';
 
-export interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: UserRole;
-    avatar?: string;
+export interface Profile {
+  id: string; // matches auth.users.id
+  full_name: string;
+  role: UserRole;
+  company_name?: string;
+  phone_number?: string;
+  created_at?: string;
 }
 
 export interface Project {
-    id: string;
-    name: string;
-    mosqueName: string;
-    location: string;
-    consultantId: string;
-    consultantName: string;
-    contractorName?: string;
-    plotNumber: string;
-    region: string;
-    status: ProjectStatus;
-    progress: number;
-    startDate: string;
-    lastUpdate: string;
-    supervisingEngineer?: string;
-    consultantEmail?: string;
-    stages?: ProjectStage[];
+  id: string;
+  project_number: string;
+  name: string;
+  description?: string;
+  plot_number: string;
+  region: string;
+  land_area: number;
+  consultant_id: string; // Profile ID
+  assigned_engineer_id?: string; // Profile ID
+  status: ProjectStatus;
+  progress: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProjectStage {
-    id: string;
-    projectId: string;
-    name: string;
-    status: 'completed' | 'current' | 'pending' | 'rejected' | 'awaiting_approval';
-    date?: string;
-    description: string;
-    drawingUrl?: string;
-    signatureUrl?: string;
+  id: string;
+  project_id: string; // Project ID
+  stage_type: StageType;
+  status: StageStatus;
+  assigned_reviewer_id?: string; // Profile ID
+  approval_date?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface Notification {
-    id: string;
-    projectId: string;
-    projectName: string;
-    message: string;
-    recipientId: string;
-    timestamp: string;
-    isRead: boolean;
+export interface StageSubmission {
+  id: string;
+  stage_id: string; // ProjectStage ID
+  version_number: number;
+  submitted_by: string; // Profile ID
+  file_url: string;
+  status: SubmissionStatus;
+  created_at?: string;
 }
 
-export const MOCK_STAGES: Record<string, ProjectStage[]> = {
-    '1': [
-        { id: 's1', projectId: '1', name: 'اعتماد الدفاع المدني', status: 'pending', description: 'يرجى رفع مخطط الدفاع المدني' },
-        { id: 's2', projectId: '1', name: 'اعتماد المياة', status: 'pending', description: 'يرجى رفع مخطط المياة' },
-        { id: 's3', projectId: '1', name: 'اعتماد الغاز', status: 'pending', description: 'يرجى رفع مخطط الغاز' },
-        { id: 's4', projectId: '1', name: 'اعتماد صحي', status: 'pending', description: 'يرجى رفع المخطط الصحي' },
-        { id: 's5', projectId: '1', name: 'اعتماد كهرباء', status: 'pending', description: 'يرجى رفع المخطط الكهربائي' },
-        { id: 's6', projectId: '1', name: 'اعتماد إنشائي', status: 'pending', description: 'يرجى رفع المخطط الإنشائي' },
-        { id: 's7', projectId: '1', name: 'اعتماد معماري', status: 'pending', description: 'يرجى رفع المخطط المعماري' },
-        { id: 's8', projectId: '1', name: 'اعتماد اتصالات', status: 'pending', description: 'يرجى رفع مخطط الاتصالات' },
-        { id: 's9', projectId: '1', name: 'اعتماد تخطيط ومساحة', status: 'pending', description: 'يرجى رفع مخطط التخطيط والمساحة' },
-    ]
-};
+export interface Comment {
+  id: string;
+  submission_id: string; // StageSubmission ID
+  author_id: string; // Profile ID
+  comment_text: string;
+  page_number?: number;
+  x_coordinate?: number;
+  y_coordinate?: number;
+  created_at?: string;
+}
 
-export const MOCK_PROJECTS: Project[] = [];
+// Temporary mock data mapping for UI fallback
+export const MOCK_PROJECTS: any[] = [];

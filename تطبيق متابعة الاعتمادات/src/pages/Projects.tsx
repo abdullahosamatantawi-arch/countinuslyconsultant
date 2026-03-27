@@ -242,7 +242,7 @@ export const Projects = () => {
 
             if (newUserCredentials) {
                 // Send welcome email to the new consultant
-                sendWelcomeEmail(newUserCredentials.email, finalConsultantName, newUserCredentials.password);
+                await sendWelcomeEmail(newUserCredentials.email, finalConsultantName, newUserCredentials.password);
                 alert(`تم إنشاء المشروع وحساب الاستشاري بنجاح!\n\nبيانات الدخول للاستشاري:\nالمستخدم: ${newUserCredentials.email}\nكلمة المرور: ${newUserCredentials.password}`);
             } else {
                 alert('تم إنشاء المشروع بنجاح!');
@@ -255,7 +255,7 @@ export const Projects = () => {
                 consultantId: '',
                 consultantName: '',
                 consultantEmail: '',
-                supervisingEngineer: ''
+            supervisingEngineer: ''
             });
             fetchProjects(); // Refresh list
 
