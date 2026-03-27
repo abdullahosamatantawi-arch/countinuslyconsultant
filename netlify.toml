@@ -1,6 +1,6 @@
 [build]
-  publish = "تطبيق متابعة الاعتمادات/dist"
-  command = "cd \"تطبيق متابعة الاعتمادات\" && npm run build"
+  publish = "follow-up-app/dist"
+  command = "cd follow-up-app && npm run build"
 
 [[redirects]]
   from = "/n8n-webhook"
