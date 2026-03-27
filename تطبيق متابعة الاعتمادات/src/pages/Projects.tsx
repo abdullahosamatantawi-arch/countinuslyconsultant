@@ -22,20 +22,20 @@ export const StatusBadge = ({ status }: { status: ProjectStatus }) => {
         pending_approval: 'قيد الاعتماد',
         under_construction: 'قيد التنفيذ',
         completed: 'مكتمل',
-        delayed: 'متأخر',
+        cancelled: 'ملغي',
     };
 
     return (
         <span className={cn(
             "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset shadow-sm",
-            styles[status]
+            styles[status as keyof typeof styles] || styles.pending_approval
         )}>
             <span className={cn("w-1.5 h-1.5 rounded-full ml-1.5", 
                 status === 'completed' ? "bg-brand-emerald" : 
                 status === 'pending_approval' ? "bg-brand-gold" : 
-                status === 'delayed' ? "bg-red-500" : "bg-blue-500"
+                "bg-blue-500"
             )}></span>
-            {labels[status]}
+            {labels[status as keyof typeof labels] || status}
         </span>
     );
 };
@@ -68,19 +68,18 @@ export const Projects = () => {
             // Map Supabase snake_case to our CamelCase interface
             const mappedProjects: Project[] = data.map(p => ({
                 id: p.id,
-                name: p.mosque_name,
+                project_number: p.project_number || p.plot_number,
+                name: p.mosque_name || p.name,
                 region: p.region,
-                plotNumber: p.plot_number,
+                plot_number: p.plot_number,
+                land_area: p.land_area || 0,
                 location: p.location,
-                contractorName: p.contractor_name,
-                consultantName: p.consultant_name,
-                consultantId: p.consultant_id,
+                consultant_id: p.consultant_id,
                 status: p.status,
-                progress: p.progress,
-                startDate: p.start_date,
-                lastUpdate: p.last_update,
-                mosqueName: p.mosque_name,
-                supervisingEngineer: p.supervising_engineer
+                progress: p.progress || 0,
+                start_date: p.start_date,
+                last_update: p.last_update,
+                assigned_engineer_id: p.assigned_engineer_id
             }));
 
             setProjects(mappedProjects);
@@ -324,8 +323,9 @@ export const Projects = () => {
     };
 
     const filteredProjects = projects.filter(p =>
-        p.mosqueName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.region.toLowerCase().includes(searchQuery.toLowerCase())
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.plot_number.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -569,8 +569,8 @@ export const Projects = () => {
                                                     {project.region}
                                                 </Link>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-600">{project.plotNumber}</td>
-                                            <td className="px-6 py-4 text-slate-600">{project.consultantName}</td>
+                                            <td className="px-6 py-4 text-slate-600">{project.plot_number}</td>
+                                            <td className="px-6 py-4 text-slate-600">{project.consultant_name}</td>
                                             <td className="px-6 py-4">
                                                 <StatusBadge status={project.status} />
                                             </td>
@@ -580,7 +580,7 @@ export const Projects = () => {
                                                         <div
                                                             className={cn("h-full rounded-full transition-all duration-1000",
                                                                 project.progress === 100 ? "bg-brand-emerald shadow-[0_0_8px_rgba(6,78,59,0.4)]" :
-                                                                    project.status === 'delayed' ? "bg-red-500" : "bg-brand-gold shadow-[0_0_8px_rgba(197,160,89,0.4)]"
+                                                                "bg-brand-gold shadow-[0_0_8px_rgba(197,160,89,0.4)]"
                                                             )}
                                                             style={{ width: `${project.progress}%` }}
                                                         />
@@ -588,7 +588,7 @@ export const Projects = () => {
                                                     <span className="text-xs font-black text-brand-emerald">{project.progress}%</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500">{project.lastUpdate}</td>
+                                            <td className="px-6 py-4 text-slate-500">{project.last_update}</td>
                                             <td className="px-6 py-4 text-left">
                                                 {(user?.role === 'manager' || user?.role === 'engineer') && (
                                                     <button

@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'engineer' | 'consultant';
+export type UserRole = 'admin' | 'engineer' | 'consultant' | 'manager';
 export type ProjectStatus = 'draft' | 'pending_approval' | 'under_construction' | 'completed' | 'cancelled';
 export type StageType = 'architectural' | 'structural' | 'mep' | 'civil_defense' | 'planning';
 export type StageStatus = 'pending_submission' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'requires_modification';
@@ -13,6 +13,14 @@ export interface Profile {
   created_at?: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+}
+
 export interface Project {
   id: string;
   project_number: string;
@@ -25,6 +33,8 @@ export interface Project {
   assigned_engineer_id?: string; // Profile ID
   status: ProjectStatus;
   progress: number;
+  consultant_name?: string;
+  last_update?: string;
   created_at?: string;
   updated_at?: string;
 }
