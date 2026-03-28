@@ -4,7 +4,8 @@
 
 [[redirects]]
   from = "/n8n-webhook"
-  to = "https://n8n.srv968918.hstgr.cloud/webhook/testingemails"
+  to = "https://n8n.srv968918.hstgr.cloud/webhook-test/testingemails
+"
   status = 200
   force = true
 
