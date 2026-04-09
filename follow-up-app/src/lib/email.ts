@@ -19,7 +19,7 @@ export const sendWelcomeEmail = async (email: string, name: string, password: st
                     email,
                     name,
                     password,
-                    loginUrl: 'http://localhost:5174/login',
+                    loginUrl: `${window.location.origin}/login`,
                     sentAt: new Date().toISOString()
                 }
             }),
