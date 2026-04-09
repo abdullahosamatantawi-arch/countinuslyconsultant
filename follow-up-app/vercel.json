@@ -1,5 +1,20 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/n8n-webhook-consultant",
+      "destination": "https://n8n.srv968918.hstgr.cloud/webhook/consultant-applications"
+    },
+    {
+      "source": "/n8n-webhook",
+      "destination": "https://n8n.srv968918.hstgr.cloud/webhook-test/AIComprasion"
+    },
+    {
+      "source": "/n8n-email-webhook",
+      "destination": "https://n8n.srv968918.hstgr.cloud/webhook-test/testingemails"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
