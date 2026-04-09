@@ -39,3 +39,33 @@ export async function sendToWebhook(payload: any) {
         console.error(`Webhook Error: ${error.message}`);
     }
 }
+export async function sendConsultantApplication(payload: any) {
+    const CONSULTANT_WEBHOOK = import.meta.env.VITE_CONSULTANT_APP_WEBHOOK;
+    console.log('Sending consultant application to webhook...');
+    
+    if (!CONSULTANT_WEBHOOK) {
+        console.warn('Consultant Application Webhook URL is missing in .env');
+        return;
+    }
+
+    try {
+        const response = await fetch('/n8n-webhook-consultant', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                timestamp: new Date().toISOString(),
+                source: 'consultant_portal',
+                ...payload,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Webhook failed with status: ${response.status}`);
+        }
+        console.log('Successfully sent consultant application to webhook');
+    } catch (error: any) {
+        console.error('Failed to send consultant application to webhook:', error);
+    }
+}

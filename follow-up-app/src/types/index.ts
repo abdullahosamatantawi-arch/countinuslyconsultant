@@ -1,7 +1,6 @@
 export type UserRole = 'admin' | 'engineer' | 'consultant' | 'manager';
 export type ProjectStatus = 'draft' | 'pending_approval' | 'under_construction' | 'completed' | 'cancelled';
-export type StageType = 'architectural' | 'structural' | 'mep' | 'civil_defense' | 'planning';
-export type StageStatus = 'pending_submission' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'requires_modification';
+export type StageType = 'architectural' | 'structural' | 'mep' | 'civil_defense' | 'planning' | 'paint' | 'ac' | 'insulation';
 export type SubmissionStatus = 'under_review' | 'approved' | 'rejected';
 
 export interface Profile {
@@ -23,31 +22,40 @@ export interface User {
 
 export interface Project {
   id: string;
-  project_number: string;
+  project_number?: string;
   name: string;
   description?: string;
   plot_number: string;
   region: string;
-  land_area: number;
-  consultant_id: string; // Profile ID
-  assigned_engineer_id?: string; // Profile ID
+  land_area?: number;
+  consultant_id: string;
+  assigned_engineer_id?: string;
   status: ProjectStatus;
   progress: number;
   consultant_name?: string;
+  contractor_name?: string;
+  location?: string;
+  start_date?: string;
   last_update?: string;
+  mosque_name?: string;
+  supervising_engineer?: string;
   created_at?: string;
   updated_at?: string;
 }
 
+export type StageStatus = 'pending' | 'current' | 'awaiting_approval' | 'completed' | 'rejected';
+
 export interface ProjectStage {
   id: string;
-  project_id: string; // Project ID
-  stage_type: StageType;
+  projectId: string; // mapped from project_id
+  name: string;
   status: StageStatus;
-  assigned_reviewer_id?: string; // Profile ID
-  approval_date?: string;
-  created_at?: string;
-  updated_at?: string;
+  description?: string;
+  date?: string;
+  drawingUrl?: string; // mapped from drawing_url
+  signatureUrl?: string; // mapped from signature_url
+  originalDrawingUrl?: string; // for comparison
+  stageType?: StageType | string;
 }
 
 export interface StageSubmission {
@@ -69,6 +77,16 @@ export interface Comment {
   x_coordinate?: number;
   y_coordinate?: number;
   created_at?: string;
+}
+
+export interface Notification {
+  id: string;
+  projectId: string;
+  projectName: string;
+  message: string;
+  recipientId: string;
+  isRead: boolean;
+  timestamp: string;
 }
 
 // Temporary mock data mapping for UI fallback

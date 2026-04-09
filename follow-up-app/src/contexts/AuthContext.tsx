@@ -61,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=0d9488&color=fff`
                 };
 
+                console.log('Logged in user:', userData);
                 setUser(userData);
                 localStorage.setItem('mosque_app_user', JSON.stringify(userData));
                 return { success: true };

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, HelpCircle, Phone, ChevronDown, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const translations = {
     ar: {
         deptName: "دائرة الشؤون الإسلامية",
-        portalSub: "بوابة الخدمات الرقمية",
+        portalSub: "إدارة بناء ورعاية المساجد",
         langLabel: "English",
         signInTitle: "تسجيل الدخول لحسابك",
         signInSub: "أدخل بياناتك للوصول إلى المنصة",
@@ -34,7 +34,7 @@ const translations = {
     },
     en: {
         deptName: "Islamic Affairs Department",
-        portalSub: "Digital Services Portal",
+        portalSub: "Mosque Construction & Care Department",
         langLabel: "العربية",
         signInTitle: "Sign in to your account",
         signInSub: "Enter your credentials to access the platform",
@@ -106,7 +106,7 @@ export const Login = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={toggleLang}
                         className="flex items-center gap-2 border border-gray-200 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 cursor-pointer transition-colors shadow-sm"
                     >
@@ -124,9 +124,9 @@ export const Login = () => {
             <main className="flex-1 flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
                 {/* Subtle Background Pattern */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none islamic-pattern"></div>
-                
+
                 <div className="max-w-4xl w-full flex flex-col md:flex-row bg-white rounded-[2rem] shadow-2xl shadow-teal-900/5 border border-gray-100 overflow-hidden relative z-10 min-h-[500px]">
-                    
+
                     {/* Left Section - Login Form */}
                     <div className={`flex-[1.2] p-8 md:p-12 ${lang === 'ar' ? 'border-l' : 'border-r'} border-gray-50`}>
                         <div className="max-w-sm mx-auto space-y-8">
@@ -210,7 +210,7 @@ export const Login = () => {
                                 </button>
 
                                 <div className="text-center text-sm font-bold text-slate-500 mt-8">
-                                    {t.noAccount} <a href="#" className="text-teal-600 hover:text-teal-700 border-b border-teal-600/30">{t.signUp}</a>
+                                    {t.noAccount} <Link to="/apply-consultant" className="text-teal-600 hover:text-teal-700 border-b border-teal-600/30">{t.signUp}</Link>
                                 </div>
                             </form>
                         </div>
@@ -229,7 +229,7 @@ export const Login = () => {
                                 </div>
                                 <p className="text-teal-800 text-xs font-black opacity-60 uppercase tracking-wider">{t.supportHours}</p>
                             </div>
-                            
+
                             <div className="text-center space-y-4 pt-4">
                                 <div className="flex items-center justify-center gap-2 text-slate-400">
                                     <HelpCircle className="w-4 h-4" />

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, X, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Plus, Search, Filter, X, Calendar as CalendarIcon, Trash2, AlertCircle } from 'lucide-react';
 import { MOCK_USERS } from '../mocks/users';
 import type { ProjectStatus, Project } from '../types';
 import { cn } from '../lib/utils';
@@ -30,10 +30,10 @@ export const StatusBadge = ({ status }: { status: ProjectStatus }) => {
             "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset shadow-sm",
             styles[status as keyof typeof styles] || styles.pending_approval
         )}>
-            <span className={cn("w-1.5 h-1.5 rounded-full ml-1.5", 
-                status === 'completed' ? "bg-brand-emerald" : 
-                status === 'pending_approval' ? "bg-brand-gold" : 
-                "bg-blue-500"
+            <span className={cn("w-1.5 h-1.5 rounded-full ml-1.5",
+                status === 'completed' ? "bg-brand-emerald" :
+                    status === 'pending_approval' ? "bg-brand-gold" :
+                        "bg-blue-500"
             )}></span>
             {labels[status as keyof typeof labels] || status}
         </span>
@@ -42,10 +42,21 @@ export const StatusBadge = ({ status }: { status: ProjectStatus }) => {
 
 export const Projects = () => {
     const { user } = useAuth();
+    const location = useLocation();
+    const basePath = location.pathname.startsWith('/approvals') ? '/approvals' : '/projects';
     const { addNotification } = useNotifications();
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState<{
+        type: 'region' | 'consultants' | 'project' | 'all_projects' | 'all_applications';
+        title: string;
+        message: string;
+        region?: string;
+        projectId?: string;
+        projectName?: string;
+    } | null>(null);
     const role = user?.role;
 
     // Fetch projects from Supabase
@@ -65,21 +76,11 @@ export const Projects = () => {
 
             if (error) throw error;
 
-            // Map Supabase snake_case to our CamelCase interface
+            // Map Supabase data to our Project interface (names now match)
             const mappedProjects: Project[] = data.map(p => ({
-                id: p.id,
+                ...p,
                 project_number: p.project_number || p.plot_number,
-                name: p.mosque_name || p.name,
-                region: p.region,
-                plot_number: p.plot_number,
-                land_area: p.land_area || 0,
-                location: p.location,
-                consultant_id: p.consultant_id,
-                status: p.status,
-                progress: p.progress || 0,
-                start_date: p.start_date,
-                last_update: p.last_update,
-                assigned_engineer_id: p.assigned_engineer_id
+                name: p.mosque_name || p.name
             }));
 
             setProjects(mappedProjects);
@@ -90,6 +91,7 @@ export const Projects = () => {
             setIsLoading(false);
         }
     };
+
 
     // Fetching consultants and engineers from mock data
     const engineersList = MOCK_USERS.filter(u => u.role === 'engineer');
@@ -150,7 +152,7 @@ export const Projects = () => {
                             .select('id, name')
                             .eq('email', email)
                             .single();
-                        
+
                         if (existingUser) {
                             finalConsultantId = existingUser.id;
                             finalConsultantName = existingUser.name;
@@ -169,18 +171,8 @@ export const Projects = () => {
                 }
             }
 
-            // Check for duplicate Plot Number
-            const { data: existingProject, error: checkError } = await supabase
-                .from('projects')
-                .select('id')
-                .eq('plot_number', newProject.plotNumber)
-                .maybeSingle();
-
-            if (checkError) console.error('Error checking duplicate:', checkError);
-            if (existingProject) {
-                alert('خطأ: يوجد مشروع مسجل بنفس رقم القطعة هذا مسبقاً.');
-                return;
-            }
+            // The manual duplicate check is removed to let Supabase handle constraints directly
+            // and to avoid issues where the check might return a false positive or fail due to RLS.
 
             const projectData = {
                 mosque_name: `قسيمة ${newProject.plotNumber}`,
@@ -206,27 +198,31 @@ export const Projects = () => {
 
             // Initialize new 9 stages for the project
             const newStagesList = [
-                { name: 'اعتماد الدفاع المدني', description: 'يرجى رفع مخطط الدفاع المدني' },
-                { name: 'اعتماد المياة', description: 'يرجى رفع مخطط المياة' },
-                { name: 'اعتماد الغاز', description: 'يرجى رفع مخطط الغاز' },
-                { name: 'اعتماد صحي', description: 'يرجى رفع المخطط الصحي' },
-                { name: 'اعتماد كهرباء', description: 'يرجى رفع المخطط الكهربائي' },
-                { name: 'اعتماد إنشائي', description: 'يرجى رفع المخطط الإنشائي' },
-                { name: 'اعتماد معماري', description: 'يرجى رفع المخطط المعماري' },
-                { name: 'اعتماد اتصالات', description: 'يرجى رفع مخطط الاتصالات' },
-                { name: 'اعتماد تخطيط ومساحة', description: 'يرجى رفع مخطط التخطيط والمساحة' },
+                { name: 'اعتماد الدفاع المدني', description: 'يرجى رفع مخطط الدفاع المدني', type: 'civil_defense' },
+                { name: 'اعتماد المياة', description: 'يرجى رفع مخطط المياة', type: 'mep' },
+                { name: 'اعتماد الغاز', description: 'يرجى رفع مخطط الغاز', type: 'mep' },
+                { name: 'اعتماد صحي', description: 'يرجى رفع المخطط الصحي', type: 'mep' },
+                { name: 'اعتماد كهرباء', description: 'يرجى رفع المخطط الكهربائي', type: 'mep' },
+                { name: 'اعتماد إنشائي', description: 'يرجى رفع المخطط الإنشائي', type: 'structural' },
+                { name: 'اعتماد معماري', description: 'يرجى رفع المخطط المعماري', type: 'architectural' },
+                { name: 'اعتماد اتصالات', description: 'يرجى رفع مخطط الاتصالات', type: 'mep' },
+                { name: 'اعتماد تخطيط ومساحة', description: 'يرجى رفع مخطط التخطيط والمساحة', type: 'planning' },
+                { name: 'ضمان الاصباغ الداخلية والخارجية', description: 'يرجى رفع ضمان الاصباغ', type: 'paint' },
+                { name: 'ضمان التكييف', description: 'يرجى رفع ضمان التكييف', type: 'ac' },
+                { name: 'ضمان العزل', description: 'يرجى رفع ضمان العزل', type: 'insulation' },
             ];
 
             const stagesData = newStagesList.map((s, index) => ({
                 project_id: projectRecord.id,
                 name: s.name,
+                stage_type: s.type,
                 status: 'pending',
                 description: s.description,
                 stage_order: index
             }));
 
             const { error: stagesError } = await supabase
-                .from('stages')
+                .from('project_stages')
                 .insert(stagesData);
 
             if (stagesError) throw stagesError;
@@ -254,7 +250,7 @@ export const Projects = () => {
                 consultantId: '',
                 consultantName: '',
                 consultantEmail: '',
-            supervisingEngineer: ''
+                supervisingEngineer: ''
             });
             fetchProjects(); // Refresh list
 
@@ -285,8 +281,16 @@ export const Projects = () => {
     const regions = Array.from(new Set(projects.map(p => p.region))).sort();
 
     const handleClearByRegion = async (region: string) => {
-        if (!window.confirm(`هل أنت متأكد من مسح كافة المشاريع في منطقة (${region})؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+        setConfirmDelete({
+            type: 'region',
+            title: `مسح منطقة (${region})`,
+            message: `هل أنت متأكد من مسح كافة المشاريع في منطقة (${region})؟ لا يمكن التراجع عن هذا الإجراء.`,
+            region
+        });
+    };
 
+    const executeClearByRegion = async (region: string) => {
+        setIsDeleting(true);
         try {
             const { error } = await supabase
                 .from('projects')
@@ -296,17 +300,121 @@ export const Projects = () => {
             if (error) throw error;
 
             alert(`تم مسح بيانات منطقة ${region} بنجاح`);
-            fetchProjects();
-        } catch (err) {
+            setConfirmDelete(null);
+            await fetchProjects();
+        } catch (err: any) {
             console.error('Error clearing region:', err);
-            alert('خطأ في مسح بيانات المنطقة');
+            alert(`خطأ في مسح بيانات المنطقة: ${err.message || err.details || 'فشل الاتصال - تأكد من صلاحيات الوصول'}`);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleClearConsultants = async () => {
+        setConfirmDelete({
+            type: 'consultants',
+            title: 'إدارة الاستشاريين',
+            message: 'هل أنت متأكد من مسح كافة الاستشاريين المسجلين؟ سيتم الإبقاء على المهندسين والمدير فقط.'
+        });
+    };
+
+    const executeClearConsultants = async () => {
+        setIsDeleting(true);
+        try {
+            const { error } = await supabase
+                .from('app_users')
+                .delete()
+                .eq('role', 'consultant');
+
+            if (error) throw error;
+
+            alert('تم مسح كافة الاستشاريين بنجاح');
+            setConfirmDelete(null);
+        } catch (err: any) {
+            console.error('Error clearing consultants:', err);
+            alert(`خطأ في مسح الاستشاريين: ${err.message || err.details || 'تفتقر للصلاحيات اللازمة أو هناك خطأ في الخادم'}`);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
     const handleDeleteProject = async (id: string, name: string) => {
-        if (!window.confirm(`هل أنت متأكد من حذف المشروع (${name})؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+        setConfirmDelete({
+            type: 'project',
+            title: 'حذف مشروع',
+            message: `هل أنت متأكد من حذف المشروع (${name})؟ لا يمكن التراجع عن هذا الإجراء.`,
+            projectId: id,
+            projectName: name
+        });
+    };
 
+    const handleClearAllProjects = async () => {
+        setConfirmDelete({
+            type: 'all_projects',
+            title: 'حذف كافة المشاريع',
+            message: 'هل أنت متأكد من حذف كافة المشاريع في النظام؟ سيؤدي هذا لمسح جميع المراحل والملفات المرتبطة بها نهائياً.'
+        });
+    };
+
+    const executeClearAllProjects = async () => {
+        setIsDeleting(true);
         try {
+            const { error } = await supabase
+                .from('projects')
+                .delete()
+                .neq('region', 'INTERNAL_SYSTEM_PROTECTED'); // Delete all rows
+
+            if (error) throw error;
+
+            alert('تم مسح كافة المشاريع بنجاح');
+            setConfirmDelete(null);
+            await fetchProjects();
+        } catch (err: any) {
+            console.error('Error clearing all projects:', err);
+            alert(`خطأ في مسح المشاريع: ${err.message || 'حدث خطأ في الخادم'}`);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleClearAllApplications = async () => {
+        setConfirmDelete({
+            type: 'all_applications',
+            title: 'مسح طلبات الانضمام',
+            message: 'هل أنت متأكد من حذف كافة طلبات انضمام الاستشاريين؟'
+        });
+    };
+
+    const executeClearAllApplications = async () => {
+        setIsDeleting(true);
+        try {
+            const { error } = await supabase
+                .from('consultant_applications')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+            if (error) throw error;
+
+            alert('تم مسح كافة طلبات الانضمام بنجاح');
+            setConfirmDelete(null);
+        } catch (err: any) {
+            console.error('Error clearing applications:', err);
+            alert(`خطأ في مسح الطلبات: ${err.message || 'حدث خطأ في الخادم'}`);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const executeDeleteProject = async (id: string, name: string) => {
+        setIsDeleting(true);
+        try {
+            // 1. Delete stages first
+            await supabase
+                .from('project_stages')
+                .delete()
+                .eq('project_id', id);
+
+            // 2. Delete the project
             const { error } = await supabase
                 .from('projects')
                 .delete()
@@ -315,15 +423,18 @@ export const Projects = () => {
             if (error) throw error;
 
             alert('تم حذف المشروع بنجاح');
-            fetchProjects();
-        } catch (err) {
+            setConfirmDelete(null);
+            await fetchProjects();
+        } catch (err: any) {
             console.error('Error deleting project:', err);
-            alert('خطأ في حذف المشروع');
+            alert(`خطأ في حذف المشروع: ${err.message || err.details || 'حدث خطأ غير متوقع - قد يكون بسبب قيود قاعدة البيانات'}`);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
     const filteredProjects = projects.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.mosque_name || p.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.plot_number.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -333,25 +444,33 @@ export const Projects = () => {
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-gold/10 pb-6">
                 <div>
-                    <h1 className="text-3xl font-serif font-black text-brand-emerald">إدارة المشاريع</h1>
-                    <p className="text-brand-gold font-bold text-sm mt-1">سجل المشاريع الهندسية والمعمارية للمساجد</p>
+                    <h1 className="text-3xl font-serif font-black text-brand-emerald">
+                        {basePath === '/projects' ? 'طلبات المساجد الجديدة' : 'اعتماد المخططات'}
+                    </h1>
+                    <p className="text-brand-gold font-bold text-sm mt-1">
+                        {basePath === '/projects' ? 'سجل طلبات المساجد الجديدة ومتابعة حالتها' : 'سجل المشاريع الهندسية والمعمارية للمساجد'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {(user?.role === 'manager' || user?.role === 'engineer') && (
-                        <button
-                            onClick={() => setIsManageModalOpen(true)}
-                            className="flex items-center gap-2 bg-white border border-brand-gold/20 text-slate-600 hover:bg-brand-beige px-4 py-2.5 rounded-xl transition-all text-sm font-bold shadow-sm"
-                        >
-                            تطهير البيانات
-                        </button>
+                    {basePath === '/projects' && (
+                        <>
+                            {(user?.role === 'manager' || user?.role === 'engineer') && (
+                                <button
+                                    onClick={() => setIsManageModalOpen(true)}
+                                    className="flex items-center gap-2 bg-white border border-brand-gold/20 text-slate-600 hover:bg-brand-beige px-4 py-2.5 rounded-xl transition-all text-sm font-bold shadow-sm"
+                                >
+                                    تطهير البيانات
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="flex items-center gap-2 emerald-gradient hover:shadow-xl hover:shadow-brand-emerald/20 text-white px-5 py-3 rounded-xl transition-all shadow-lg shadow-brand-emerald/10 font-bold"
+                            >
+                                <Plus className="w-5 h-5" />
+                                <span>إضافة مشروع جديد</span>
+                            </button>
+                        </>
                     )}
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 emerald-gradient hover:shadow-xl hover:shadow-brand-emerald/20 text-white px-5 py-3 rounded-xl transition-all shadow-lg shadow-brand-emerald/10 font-bold"
-                    >
-                        <Plus className="w-5 h-5" />
-                        <span>إضافة مشروع جديد</span>
-                    </button>
                 </div>
             </div>
 
@@ -371,24 +490,78 @@ export const Projects = () => {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-6">
-                            {regions.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400 italic">لا توجد مناطق لعرضها</div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {regions.map(region => (
-                                        <div key={region} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                                            <span className="font-bold text-slate-700">{region}</span>
-                                            <button
-                                                onClick={() => handleClearByRegion(region)}
-                                                className="text-xs bg-white text-red-600 border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-600 hover:text-white transition-all font-bold shadow-sm"
-                                            >
-                                                مسح المنطقة
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                        <div className="p-6 space-y-6">
+                            {/* Clear Consultants Section */}
+                            <div className="p-4 bg-red-50 rounded-2xl border border-red-100 space-y-3">
+                                <h3 className="text-sm font-black text-red-800 flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span>إدارة الاستشاريين</span>
+                                </h3>
+                                <p className="text-[11px] text-red-600 font-bold leading-relaxed">
+                                    هذا الخيار سيقوم بحذف كافة حسابات الاستشاريين المسجلة حالياً في قاعدة البيانات. لن يتم حذف المهندسين أو المدير.
+                                </p>
+                                <button
+                                    onClick={handleClearConsultants}
+                                    disabled={isDeleting}
+                                    className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-red-600/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                                    إزالة كافة الاستشاريين المسجلين
+                                </button>
+                                <button
+                                    onClick={handleClearAllApplications}
+                                    disabled={isDeleting}
+                                    className="w-full py-2.5 bg-slate-800 hover:bg-black text-white rounded-xl text-xs font-black transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                                    إزالة كافة طلبات انضمام الاستشاريين
+                                </button>
+                            </div>
+
+                            <div className="h-px bg-slate-100"></div>
+
+                            {/* Clear Projects Section */}
+                            <div>
+                                <h3 className="text-[13px] font-black text-slate-800 mb-4 px-1">مسح المشاريع حسب المنطقة</h3>
+                                {regions.length === 0 ? (
+                                    <div className="text-center py-8 text-slate-400 italic text-sm">لا توجد مناطق لعرضها</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {regions.map(region => (
+                                            <div key={region} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                                                <span className="font-bold text-slate-700">{region}</span>
+                                                <button
+                                                    onClick={() => handleClearByRegion(region)}
+                                                    className="text-xs bg-white text-red-600 border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-600 hover:text-white transition-all font-bold shadow-sm"
+                                                >
+                                                    مسح المنطقة
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="h-px bg-slate-100"></div>
+
+                            {/* Clear All Projects Section */}
+                            <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100 space-y-3">
+                                <h3 className="text-sm font-black text-orange-800 flex items-center gap-2">
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>مسح البيانات الشامل</span>
+                                </h3>
+                                <p className="text-[11px] text-orange-600 font-bold leading-relaxed">
+                                    سيقوم هذا الإجراء بحذف **كافة المشاريع** ومراحلها من جميع المناطق نهائياً.
+                                </p>
+                                <button
+                                    onClick={handleClearAllProjects}
+                                    disabled={isDeleting}
+                                    className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-orange-600/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                                    مسح كافة المشاريع من النظام
+                                </button>
+                            </div>
                         </div>
                         <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
                             <button
@@ -565,9 +738,13 @@ export const Projects = () => {
                                     filteredProjects.map((project) => (
                                         <tr key={project.id} className="hover:bg-slate-50/80 transition-colors group">
                                             <td className="px-6 py-4 font-medium text-slate-900">
-                                                <Link to={`/projects/${project.id}`} className="hover:text-teal-600 transition-colors">
-                                                    {project.region}
-                                                </Link>
+                                                {basePath === '/projects' ? (
+                                                    <span>{project.region}</span>
+                                                ) : (
+                                                    <Link to={`${basePath}/${project.id}`} className="hover:text-teal-600 transition-colors">
+                                                        {project.region}
+                                                    </Link>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-slate-600">{project.plot_number}</td>
                                             <td className="px-6 py-4 text-slate-600">{project.consultant_name}</td>
@@ -580,7 +757,7 @@ export const Projects = () => {
                                                         <div
                                                             className={cn("h-full rounded-full transition-all duration-1000",
                                                                 project.progress === 100 ? "bg-brand-emerald shadow-[0_0_8px_rgba(6,78,59,0.4)]" :
-                                                                "bg-brand-gold shadow-[0_0_8px_rgba(197,160,89,0.4)]"
+                                                                    "bg-brand-gold shadow-[0_0_8px_rgba(197,160,89,0.4)]"
                                                             )}
                                                             style={{ width: `${project.progress}%` }}
                                                         />
@@ -593,7 +770,8 @@ export const Projects = () => {
                                                 {(user?.role === 'manager' || user?.role === 'engineer') && (
                                                     <button
                                                         onClick={() => handleDeleteProject(project.id, project.region)}
-                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                        disabled={isDeleting}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-30"
                                                         title="حذف المشروع"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -608,6 +786,53 @@ export const Projects = () => {
                     )}
                 </div>
             </div>
+            {/* Confirmation Dialog */}
+            {confirmDelete && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 text-center space-y-4">
+                            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto">
+                                <AlertCircle className="w-8 h-8 text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-800">{confirmDelete.title}</h3>
+                                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                                    {confirmDelete.message}
+                                </p>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    disabled={isDeleting}
+                                    onClick={() => {
+                                        if (confirmDelete.type === 'region' && confirmDelete.region) {
+                                            executeClearByRegion(confirmDelete.region);
+                                        } else if (confirmDelete.type === 'consultants') {
+                                            executeClearConsultants();
+                                        } else if (confirmDelete.type === 'project' && confirmDelete.projectId && confirmDelete.projectName) {
+                                            executeDeleteProject(confirmDelete.projectId, confirmDelete.projectName);
+                                        } else if (confirmDelete.type === 'all_projects') {
+                                            executeClearAllProjects();
+                                        } else if (confirmDelete.type === 'all_applications') {
+                                            executeClearAllApplications();
+                                        }
+                                    }}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold transition-all shadow-md shadow-red-600/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                                    <span>تأكيد الحذف</span>
+                                </button>
+                                <button
+                                    disabled={isDeleting}
+                                    onClick={() => setConfirmDelete(null)}
+                                    className="flex-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 py-2.5 rounded-xl font-bold transition-all"
+                                >
+                                    إلغاء
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

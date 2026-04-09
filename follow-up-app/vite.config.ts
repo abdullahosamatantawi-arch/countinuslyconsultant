@@ -9,16 +9,16 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     server: {
       proxy: {
+        '/n8n-webhook-consultant': {
+          target: env.VITE_CONSULTANT_APP_WEBHOOK,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/n8n-webhook-consultant/, ''),
+          secure: false,
+        },
         '/n8n-webhook': {
           target: env.VITE_N8N_WEBHOOK_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/n8n-webhook/, ''),
-          secure: false,
-        },
-        '/n8n-email-webhook': {
-          target: env.VITE_N8N_EMAIL_WEBHOOK_URL,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/n8n-email-webhook/, ''),
           secure: false,
         },
       },

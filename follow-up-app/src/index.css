@@ -1,21 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Tajawal", "Inter", sans-serif;
+  --font-sans: "Cairo", "Tajawal", "Inter", sans-serif;
   --font-serif: "Amiri", serif;
   
-  /* Premium Islamic Palette */
-  --color-brand-emerald: #064e3b;
+  /* Engineering Navy Palette */
+  --color-navy: #0f172a;
+  --color-navy-light: #1e293b;
+  --color-navy-mid: #334155;
+  --color-brand-emerald: #024b40;
   --color-brand-gold: #c5a059;
   --color-brand-gold-light: #e6d5b8;
-  --color-brand-beige: #fdfbf7;
+  --color-brand-beige: #f8f9fa;
   
-  --color-primary: var(--color-brand-emerald);
+  --color-primary: var(--color-navy);
   --color-primary-foreground: #ffffff;
-  --color-secondary: var(--color-brand-gold);
+  --color-secondary: #f59e0b;
   --color-secondary-foreground: #ffffff;
   
-  --color-accent: var(--color-brand-gold);
+  --color-accent: #3b82f6;
   --color-accent-foreground: #ffffff;
 
   --radius-xl: 1rem;
@@ -24,24 +27,41 @@
 }
 
 @layer base {
-  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&family=Amiri:wght@400;700&display=swap');
 
   body {
-    @apply font-sans bg-brand-beige text-slate-900;
+    @apply font-sans bg-slate-50 text-slate-900 antialiased;
   }
 
   h1, h2, h3, h4, .font-serif {
     @apply font-serif;
   }
+
+  /* Custom scrollbar for the dark sidebar */
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+  }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-xl shadow-slate-200/50;
+    @apply bg-white/80 backdrop-blur-md border border-white/60 shadow-lg shadow-slate-200/30;
+  }
+
+  .plus-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 10H0v1h9v9h1v-9h9v-1h-9V1h-1v9z' fill='%23e5e7eb' fill-opacity='0.4'/%3E%3C/svg%3E");
+    background-size: 40px 40px;
   }
 
   .islamic-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c5a059' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4v-4H4v4H0v2h4v4h2v-4h4v-2H6zm30 0v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c5a059' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4v-4H4v4H0v2h4v4h2v-4h4v-2H6zm30 0v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   .islamic-border {
@@ -55,6 +75,10 @@
   }
   
   .emerald-gradient {
-    @apply bg-gradient-to-br from-[#064e3b] to-[#0d9488];
+    @apply bg-gradient-to-br from-[#024b40] to-[#056d5c];
+  }
+
+  .navy-gradient {
+    @apply bg-gradient-to-b from-[#0f172a] to-[#1e293b];
   }
 }

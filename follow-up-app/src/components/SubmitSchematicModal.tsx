@@ -3,7 +3,7 @@ import { X, UploadCloud, File, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Project, StageType } from '../types';
+import type { Project, StageType } from '../types';
 
 interface SubmitSchematicModalProps {
   isOpen: boolean;
@@ -76,7 +76,7 @@ export const SubmitSchematicModal: React.FC<SubmitSchematicModalProps> = ({ isOp
       // 1. Upload File to Supabase Storage (Assumes 'schematics' bucket exists)
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${selectedProjectId}/${selectedStageType}_v1_${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('schematics')
         .upload(fileName, selectedFile);
 
@@ -102,7 +102,7 @@ export const SubmitSchematicModal: React.FC<SubmitSchematicModalProps> = ({ isOp
       if (existingStages && existingStages.length > 0) {
         stageId = existingStages[0].id;
         // Get the latest version number
-        const { data: latestSub, error: subError } = await supabase
+        const { data: latestSub } = await supabase
           .from('stage_submissions')
           .select('version_number')
           .eq('stage_id', stageId)
@@ -115,13 +115,33 @@ export const SubmitSchematicModal: React.FC<SubmitSchematicModalProps> = ({ isOp
         // Update stage status
         await supabase.from('project_stages').update({ status: 'submitted' }).eq('id', stageId);
       } else {
+        // Mapping for Arabic names
+        const stageNameMap: Record<string, string> = {
+          architectural: 'اعتماد معماري',
+          structural: 'اعتماد إنشائي',
+          mep: 'اعتماد كهروميكانيكي',
+          civil_defense: 'اعتماد الدفاع المدني',
+          planning: 'تخطيط ومساحة',
+          paint: 'ضمان الاصباغ الداخلية والخارجية',
+          ac: 'ضمان التكييف',
+          insulation: 'ضمان العزل'
+        };
+
+        // Get current count for ordering
+        const { count } = await supabase
+          .from('project_stages')
+          .select('*', { count: 'exact', head: true })
+          .eq('project_id', selectedProjectId);
+
         // Create new Stage
         const { data: newStage, error: createStageError } = await supabase
           .from('project_stages')
           .insert({
             project_id: selectedProjectId,
             stage_type: selectedStageType,
-            status: 'submitted'
+            name: stageNameMap[selectedStageType] || selectedStageType,
+            status: 'submitted',
+            stage_order: count || 0
           })
           .select()
           .single();
@@ -226,6 +246,9 @@ export const SubmitSchematicModal: React.FC<SubmitSchematicModalProps> = ({ isOp
                   <option value="mep">كهروميكانيكي (MEP)</option>
                   <option value="civil_defense">دفاع مدني (Civil Defense)</option>
                   <option value="planning">تخطيط ومساحة (Planning)</option>
+                  <option value="paint">ضمان الاصباغ (Paint Guarantee)</option>
+                  <option value="ac">ضمان التكييف (AC Guarantee)</option>
+                  <option value="insulation">ضمان العزل (Insulation Guarantee)</option>
                 </select>
               </div>
             </div>

@@ -1,89 +1,54 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FolderKanban, CheckCircle2, AlertCircle, FileEdit, PlusCircle, Activity } from 'lucide-react';
+import { CheckCircle2, HardHat, Clock, Eye, MoreHorizontal, ArrowUpDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { SubmitSchematicModal } from '../components/SubmitSchematicModal';
+
+
+const getStatusConfig = (status: string) => {
+    switch (status) {
+        case 'completed':
+            return { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-100', label: 'مكتمل' };
+        case 'under_construction':
+            return { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500', border: 'border-blue-100', label: 'قيد الإنشاء' };
+        case 'pending_approval':
+            return { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', border: 'border-amber-100', label: 'بانتظار الاعتماد' };
+        case 'cancelled':
+            return { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-100', label: 'ملغى' };
+        default:
+            return { bg: 'bg-slate-50', text: 'text-slate-700', dot: 'bg-slate-500', border: 'border-slate-100', label: 'مسودة' };
+    }
+};
 
 export const Dashboard = () => {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-    
-    const [stats, setStats] = useState({
-        activeProjects: 0,
-        underReview: 0,
-        approved: 0,
-        rejected: 0
-    });
 
-    const [recentActivities, setRecentActivities] = useState<any[]>([]);
+    const [projectsList, setProjectsList] = useState<any[]>([]);
+
+    const [stats, setStats] = useState({
+        newProposals: 0,
+        approvedBlueprints: 0,
+        underConstruction: 0
+    });
 
     const loadDashboardData = useCallback(async () => {
         if (!user) return;
         setIsLoading(true);
         try {
-            // 1. Fetch Projects for KPIs
-            let pQuery = supabase.from('projects').select('id, status');
+            let pQuery = supabase.from('projects').select('*').order('created_at', { ascending: false });
             if (user.role === 'consultant') pQuery = pQuery.eq('consultant_id', user.id);
-            const { data: pData, error: pError } = await pQuery;
-            if (pError) throw pError;
-            
-            const activeProjects = pData ? pData.filter((p:any) => p.status !== 'completed' && p.status !== 'cancelled').length : 0;
+            const { data: pData } = await pQuery;
 
-            // 2. Fetch Submissions for KPIs and Recent Activities
-            let sQuery = supabase.from('stage_submissions').select(`
-                id, 
-                status, 
-                created_at, 
-                project_stages (
-                    stage_type, 
-                    projects (
-                        name, 
-                        consultant_id
-                    )
-                )
-            `);
-            const { data: sData, error: sError } = await sQuery;
-            if (sError) throw sError;
-            
-            // Filter submissions if consultant
-            let relevantSubmissions = sData as any[];
-            if (user.role === 'consultant' && sData) {
-                relevantSubmissions = sData.filter((s:any) => s.project_stages?.projects?.consultant_id === user.id);
-            }
-            
-            if (relevantSubmissions) {
-                const underReview = relevantSubmissions.filter((s:any) => s.status === 'under_review').length;
-                const approved = relevantSubmissions.filter((s:any) => s.status === 'approved').length;
-                const rejected = relevantSubmissions.filter((s:any) => s.status === 'rejected').length;
-                setStats({ activeProjects, underReview, approved, rejected });
-                 
-                const activities = relevantSubmissions
-                    .sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                    .slice(0, 4)
-                    .map((s:any, idx) => {
-                        let text = '';
-                        let type = s.status === 'approved' ? 'approved' : s.status === 'rejected' ? 'rejected' : 'pending';
-                        let pName = s.project_stages?.projects?.name || 'مشروع';
-                        let sType = s.project_stages?.stage_type || 'مخطط';
-                        
-                        let sNameAr = sType === 'architectural' ? 'معماري' : 
-                                      sType === 'structural' ? 'إنشائي' : 
-                                      sType === 'mep' ? 'كهروميكانيكي' : 
-                                      sType === 'civil_defense' ? 'دفاع مدني' : 'تخطيطي';
-                         
-                        if (s.status === 'approved') text = `تم اعتماد المخطط ال${sNameAr} لـ ${pName}`;
-                        else if (s.status === 'rejected') text = `تم رفض المخطط ال${sNameAr} لـ ${pName}`;
-                        else text = `تم تقديم المخطط ال${sNameAr} لـ ${pName} وهو قيد المراجعة`;
-                         
-                        let time = new Date(s.created_at).toLocaleDateString('ar-AE', { day: 'numeric', month: 'short', hour: 'numeric', minute: 'numeric' });
-                         
-                        return { id: s.id || idx, text, type, time };
-                    });
-                setRecentActivities(activities);
+            if (pData) {
+                setProjectsList(pData);
             }
 
+            const newProposals = pData ? pData.filter((p: any) => p.status === 'pending_approval' || p.status === 'draft').length : 0;
+            const approvedBlueprints = pData ? pData.filter((p: any) => p.status === 'completed').length : 0;
+            const underConstruction = pData ? pData.filter((p: any) => p.status === 'under_construction').length : 0;
+
+            setStats({ newProposals, approvedBlueprints, underConstruction });
         } catch (err) {
             console.error("Dashboard Fetch Error:", err);
         } finally {
@@ -91,146 +56,169 @@ export const Dashboard = () => {
         }
     }, [user]);
 
-    useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
+    useEffect(() => { loadDashboardData(); }, [loadDashboardData]);
 
-    const handleModalClose = () => {
-        setIsSubmitModalOpen(false);
-        // Refresh dashboard data after a submission
-        loadDashboardData();
-    };
-
-    const StatCard = ({ title, value, icon: Icon, colorClass, gradientClass, subtext }: any) => (
-        <div className="glass-card p-6 rounded-2xl flex items-start justify-between group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden border-slate-200 bg-white shadow-sm">
-            <div className="z-10">
-                <h3 className="text-slate-600 text-sm font-bold mb-1 font-cairo">{title}</h3>
-                <p className={cn("text-4xl font-serif font-black mb-2", colorClass)}>{value}</p>
-                {subtext && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{subtext}</p>}
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-32">
+                <div className="text-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-slate-200 border-t-navy rounded-full animate-spin mx-auto"></div>
+                    <p className="text-slate-400 font-medium">جاري تحميل البيانات...</p>
+                </div>
             </div>
-            <div className={cn("p-4 rounded-2xl shadow-lg z-10 transition-transform group-hover:rotate-12", gradientClass)}>
-                <Icon className="w-6 h-6 text-white" />
-            </div>
-        </div>
-    );
+        );
+    }
 
-    if (isLoading) return <div className="p-12 text-center text-slate-500 font-cairo">جاري تحميل لوحة القيادة...</div>;
+    const kpis = [
+        {
+            title: 'مشاريع جديدة قيد الدراسة',
+            value: stats.newProposals || 0,
+            icon: Clock,
+            color: 'text-amber-600',
+            bgColor: 'bg-amber-50',
+            iconBg: 'bg-amber-500',
+            borderColor: 'border-amber-100',
+        },
+        {
+            title: 'مشاريع مكتملة',
+            value: stats.approvedBlueprints || 0,
+            icon: CheckCircle2,
+            color: 'text-emerald-600',
+            bgColor: 'bg-emerald-50',
+            iconBg: 'bg-emerald-500',
+            borderColor: 'border-emerald-100',
+        },
+        {
+            title: 'مساجد قيد الإنشاء',
+            value: stats.underConstruction || 0,
+            icon: HardHat,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50',
+            iconBg: 'bg-blue-500',
+            borderColor: 'border-blue-100',
+        },
+    ];
 
     return (
-        <div className="space-y-8 font-cairo">
-            {/* Header Area with Call to Action */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <div>
-                     <h2 className="text-2xl font-black text-emerald-900">أهلاً بك، {user?.name || 'المهندس'}</h2>
-                     <p className="text-slate-500 text-sm mt-1">إليك ملخص سريع لحالة المشاريع والاعتمادات الخاصة بك.</p>
-                </div>
-                <div className="flex gap-3">
-                    <button className="btn-primary flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-800 text-white px-6 py-2.5 rounded-xl hover:shadow-lg transition-all shadow-md">
-                        <PlusCircle className="w-5 h-5" />
-                        <span>فتح مشروع جديد</span>
-                    </button>
-                    <button 
-                        onClick={() => setIsSubmitModalOpen(true)}
-                        className="btn-secondary flex items-center gap-2 bg-amber-100 text-amber-800 px-6 py-2.5 rounded-xl hover:bg-amber-200 transition-all font-bold shadow-sm"
-                    >
-                        <FileEdit className="w-5 h-5" />
-                        <span>تقديم مخطط</span>
-                    </button>
-                </div>
+        <div className="space-y-8 pb-10" dir="rtl">
+            {/* Page Title */}
+            <div>
+                <h2 className="text-2xl font-black text-slate-800 font-sans">لوحة التحكم</h2>
+                <p className="text-slate-400 text-sm font-medium mt-1">نظرة عامة على طلبات بناء المساجد الجديدة</p>
             </div>
 
-            {/* KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard 
-                    title="المشاريع النشطة" 
-                    value={stats.activeProjects} 
-                    icon={FolderKanban} 
-                    colorClass="text-emerald-900" 
-                    gradientClass="bg-gradient-to-br from-slate-700 to-slate-900" 
-                    subtext="مشاريع قيد العمل" 
-                />
-                <StatCard 
-                    title="مخططات قيد المراجعة" 
-                    value={stats.underReview} 
-                    icon={Activity} 
-                    colorClass="text-amber-600" 
-                    gradientClass="bg-gradient-to-br from-amber-400 to-amber-600" 
-                    subtext="بانتظار الاعتماد" 
-                />
-                <StatCard 
-                    title="المخططات المعتمدة" 
-                    value={stats.approved} 
-                    icon={CheckCircle2} 
-                    colorClass="text-emerald-600" 
-                    gradientClass="bg-gradient-to-br from-emerald-500 to-teal-600" 
-                    subtext="اكتملت المراجعة" 
-                />
-                <StatCard 
-                    title="مرفوضة / تحتاج تعديل" 
-                    value={stats.rejected} 
-                    icon={AlertCircle} 
-                    colorClass="text-red-500" 
-                    gradientClass="bg-gradient-to-br from-red-500 to-rose-600" 
-                    subtext="ملاحظات قيد الانتظار" 
-                />
-            </div>
-
-            {/* Recent Activities */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-                        <h3 className="font-bold text-emerald-900 text-lg flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-amber-500" />
-                            الجدول الزمني للنشاطات
-                        </h3>
-                    </div>
-                    <div className="space-y-6">
-                        {recentActivities.length === 0 ? (
-                            <div className="text-center py-10 text-slate-400">لا توجد نشاطات حديثة حتى الآن.</div>
-                        ) : recentActivities.map((activity) => (
-                            <div key={activity.id} className="flex gap-4 items-start relative before:absolute before:right-[19px] before:top-10 before:bottom-[-24px] before:w-[2px] before:bg-slate-100 last:before:hidden">
-                                <div className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-4 border-white",
-                                    activity.type === 'approved' ? 'bg-emerald-100 text-emerald-600' :
-                                    activity.type === 'pending' ? 'bg-amber-100 text-amber-600' :
-                                    'bg-red-100 text-red-600'
-                                )}>
-                                    {activity.type === 'approved' ? <CheckCircle2 className="w-5 h-5" /> : 
-                                     activity.type === 'pending' ? <FileEdit className="w-5 h-5" /> : 
-                                     <AlertCircle className="w-5 h-5" />}
-                                </div>
-                                <div className="bg-slate-50 p-4 rounded-xl flex-1 hover:shadow-md transition-all border border-slate-100/50">
-                                    <p className="text-sm font-bold text-slate-700">{activity.text}</p>
-                                    <span className="text-[11px] text-slate-400 mt-2 block font-medium">{activity.time}</span>
-                                </div>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {kpis.map((kpi, i) => (
+                    <div key={i} className={cn("bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group", kpi.borderColor)}>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-slate-500 text-[13px] font-bold mb-3">{kpi.title}</p>
+                                <p className={cn("text-4xl font-black", kpi.color)}>{kpi.value}</p>
                             </div>
-                        ))}
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform", kpi.iconBg)}>
+                                <kpi.icon className="w-6 h-6 text-white" />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Consultant Submissions Table */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                {/* Table Header */}
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-black text-slate-800">طلبات الاستشاريين الواردة</h3>
+                        <p className="text-[13px] text-slate-400 font-medium mt-0.5">مراجعة واعتماد مخططات المساجد الجديدة المقدمة</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-100">
+                            <ArrowUpDown className="w-4 h-4" />
+                            <span>ترتيب</span>
+                        </button>
                     </div>
                 </div>
 
-                {/* Info Panel */}
-                <div className="bg-gradient-to-b from-emerald-900 to-emerald-950 rounded-3xl p-6 shadow-lg text-white">
-                    <h3 className="font-bold text-amber-400 text-lg mb-4">تعليمات الدائرة</h3>
-                    <div className="space-y-4">
-                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-                            <h4 className="font-bold mb-1 text-sm text-emerald-100">تحديث إرشادات الاعتماد</h4>
-                            <p className="text-xs text-slate-300 leading-relaxed">يرجى التأكد من مطابقة جميع المخططات المعمارية لدليل تصميم المساجد المحدث في إمارة الشارقة لعام 2026 تجنباً للتأخير.</p>
-                        </div>
-                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
-                            <h4 className="font-bold mb-1 text-sm text-emerald-100">حالة النظام</h4>
-                            <p className="text-xs text-slate-300 leading-relaxed flex items-center gap-2 mt-2">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                متصل بقاعدة البيانات بنجاح
-                            </p>
-                        </div>
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-slate-50/80 border-b border-slate-100">
+                                <th className="text-right px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-wider">اسم المشروع</th>
+                                <th className="text-right px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-wider">المكتب الاستشاري</th>
+                                <th className="text-right px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-wider">سعة المسجد</th>
+                                <th className="text-right px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-wider">المنطقة</th>
+                                <th className="text-right px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-wider">حالة الاعتماد</th>
+                                <th className="text-center px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-wider">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {projectsList.length > 0 ? projectsList.map((row) => {
+                                const statusConfig = getStatusConfig(row.status);
+                                return (
+                                    <tr key={row.id} className="hover:bg-slate-50/60 transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div>
+                                                <p className="font-bold text-slate-800 text-[14px]">{row.mosque_name || row.name || `مشروع ${row.plot_number}`}</p>
+                                                <p className="text-[12px] text-slate-400 mt-1 max-w-xs truncate">{row.description || 'لا يوجد وصف تفصيلي للمشروع'}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <p className="font-medium text-slate-600 text-[13px]">{row.consultant_name}</p>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <p className="font-bold text-slate-700 text-[13px]">{row.land_area ? `${row.land_area} م²` : 'غير محدد'}</p>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <p className="font-medium text-slate-600 text-[13px]">{row.region} - {row.plot_number}</p>
+                                        </td>
+                                        <td className="px-6 py-5">
+                                            <span className={cn(
+                                                "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-bold border",
+                                                statusConfig.bg, statusConfig.text, statusConfig.border
+                                            )}>
+                                                <span className={cn("w-1.5 h-1.5 rounded-full", statusConfig.dot)}></span>
+                                                {statusConfig.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => window.location.href = `/approvals/${row.id}`}
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-navy text-white text-[12px] font-bold rounded-lg hover:bg-navy-light transition-all shadow-sm hover:shadow-md"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span>مراجعة المشروع</span>
+                                                </button>
+                                                <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            }) : (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                        <p className="text-sm font-bold text-slate-400">لا توجد مشاريع مسجلة بعد</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Table Footer */}
+                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <p className="text-[12px] text-slate-400 font-medium">عرض {projectsList.length} طلبات مسجلة</p>
+                    <div className="flex items-center gap-2">
+                        <button className="px-3 py-1.5 text-[12px] font-bold text-slate-400 bg-white border border-slate-100 rounded-lg hover:bg-slate-50 transition-all">السابق</button>
+                        <button className="px-3 py-1.5 text-[12px] font-bold text-white bg-navy rounded-lg">1</button>
+                        <button className="px-3 py-1.5 text-[12px] font-bold text-slate-400 bg-white border border-slate-100 rounded-lg hover:bg-slate-50 transition-all">التالي</button>
                     </div>
                 </div>
             </div>
-
-            <SubmitSchematicModal 
-                isOpen={isSubmitModalOpen} 
-                onClose={handleModalClose} 
-            />
         </div>
     );
 };

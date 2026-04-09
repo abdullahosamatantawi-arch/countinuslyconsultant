@@ -3,7 +3,7 @@
 -- 1. Create custom ENUM types
 CREATE TYPE user_role AS ENUM ('admin', 'engineer', 'consultant');
 CREATE TYPE project_status AS ENUM ('draft', 'pending_approval', 'under_construction', 'completed', 'cancelled');
-CREATE TYPE stage_type AS ENUM ('architectural', 'structural', 'mep', 'civil_defense', 'planning');
+CREATE TYPE stage_type AS ENUM ('architectural', 'structural', 'mep', 'civil_defense', 'planning', 'paint', 'ac', 'insulation');
 CREATE TYPE stage_status AS ENUM ('pending_submission', 'submitted', 'under_review', 'approved', 'rejected', 'requires_modification');
 CREATE TYPE submission_status AS ENUM ('under_review', 'approved', 'rejected');
 
@@ -72,16 +72,36 @@ CREATE TABLE IF NOT EXISTS public.comments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 7. Add Row Level Security (RLS) basics (You can refine these later)
+-- 7. Consultant Applications (Public Registration)
+CREATE TABLE IF NOT EXISTS public.consultant_applications (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    company_name TEXT NOT NULL,
+    license_number TEXT NOT NULL,
+    contact_person TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    specialization TEXT,
+    experience_years INTEGER,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 8. Add Row Level Security (RLS) basics (You can refine these later)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_stages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stage_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.consultant_applications ENABLE ROW LEVEL SECURITY;
 
--- Expose simple SELECT policies for authenticated users
-CREATE POLICY "Enable read access for all users" ON public.profiles FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable read access for all users" ON public.projects FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable read access for all users" ON public.project_stages FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable read access for all users" ON public.stage_submissions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable read access for all users" ON public.comments FOR SELECT USING (auth.role() = 'authenticated');
+-- 8. Policies for Authenticated Users (INSERT, UPDATE, DELETE)
+CREATE POLICY "Enable all access for authenticated users" ON public.profiles FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON public.projects FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON public.project_stages FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON public.stage_submissions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all access for authenticated users" ON public.comments FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable public insertions for applications" ON public.consultant_applications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable reading applications for managers" ON public.consultant_applications FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Fallback for app_users if it exists as a separate table
+-- CREATE POLICY "Enable all access for authenticated users" ON public.app_users FOR ALL USING (auth.role() = 'authenticated');
