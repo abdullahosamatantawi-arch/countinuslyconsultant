@@ -405,7 +405,7 @@ export const Projects = () => {
         }
     };
 
-    const executeDeleteProject = async (id: string, name: string) => {
+    const executeDeleteProject = async (id: string) => {
         setIsDeleting(true);
         try {
             // 1. Delete stages first
@@ -809,7 +809,7 @@ export const Projects = () => {
                                         } else if (confirmDelete.type === 'consultants') {
                                             executeClearConsultants();
                                         } else if (confirmDelete.type === 'project' && confirmDelete.projectId && confirmDelete.projectName) {
-                                            executeDeleteProject(confirmDelete.projectId, confirmDelete.projectName);
+                                            executeDeleteProject(confirmDelete.projectId);
                                         } else if (confirmDelete.type === 'all_projects') {
                                             executeClearAllProjects();
                                         } else if (confirmDelete.type === 'all_applications') {
