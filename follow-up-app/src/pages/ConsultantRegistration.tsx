@@ -11,7 +11,6 @@ import {
   ChevronRight, 
   ChevronLeft, 
   CheckCircle2, 
-  FileText,
   UploadCloud,
   Sparkles,
   Loader2,
