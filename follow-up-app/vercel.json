@@ -13,6 +13,10 @@
       "destination": "https://n8n.srv968918.hstgr.cloud/webhook-test/testingemails"
     },
     {
+      "source": "/n8n-extract-license",
+      "destination": "https://n8n.srv968918.hstgr.cloud/webhook-test/extract-license"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

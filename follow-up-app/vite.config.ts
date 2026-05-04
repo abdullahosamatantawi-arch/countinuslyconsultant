@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     server: {
+      port: 3002,
       proxy: {
         '/n8n-webhook-consultant': {
           target: env.VITE_CONSULTANT_APP_WEBHOOK,
@@ -19,6 +20,12 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_N8N_WEBHOOK_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/n8n-webhook/, ''),
+          secure: false,
+        },
+        '/n8n-extract-license': {
+          target: env.VITE_N8N_EXTRACT_WEBHOOK,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/n8n-extract-license/, ''),
           secure: false,
         },
       },

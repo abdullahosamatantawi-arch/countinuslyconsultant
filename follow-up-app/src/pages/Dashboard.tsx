@@ -3,6 +3,12 @@ import { CheckCircle2, HardHat, Clock, Eye, MoreHorizontal, ArrowUpDown } from '
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { KPISkeleton, DashboardTableSkeleton } from '../components/ui/Skeleton';
+import { useMemo } from 'react';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+    PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 
 const getStatusConfig = (status: string) => {
@@ -58,16 +64,26 @@ export const Dashboard = () => {
 
     useEffect(() => { loadDashboardData(); }, [loadDashboardData]);
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-32">
-                <div className="text-center space-y-4">
-                    <div className="w-12 h-12 border-4 border-slate-200 border-t-navy rounded-full animate-spin mx-auto"></div>
-                    <p className="text-slate-400 font-medium">جاري تحميل البيانات...</p>
-                </div>
-            </div>
-        );
-    }
+    const regionData = useMemo(() => {
+        const counts: Record<string, number> = {};
+        projectsList.forEach(p => {
+            const region = p.region || 'غير محدد';
+            counts[region] = (counts[region] || 0) + 1;
+        });
+        return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }, [projectsList]);
+
+    const statusData = useMemo(() => {
+        const counts: Record<string, number> = {};
+        projectsList.forEach(p => {
+            const statusLabel = getStatusConfig(p.status).label;
+            counts[statusLabel] = (counts[statusLabel] || 0) + 1;
+        });
+        return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }, [projectsList]);
+
+    const CHART_COLORS = ['#059669', '#d97706', '#2563eb', '#dc2626', '#475569'];
+
 
     const kpis = [
         {
@@ -109,20 +125,107 @@ export const Dashboard = () => {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {kpis.map((kpi, i) => (
-                    <div key={i} className={cn("bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group", kpi.borderColor)}>
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-slate-500 text-[13px] font-bold mb-3">{kpi.title}</p>
-                                <p className={cn("text-4xl font-black", kpi.color)}>{kpi.value}</p>
-                            </div>
-                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform", kpi.iconBg)}>
-                                <kpi.icon className="w-6 h-6 text-white" />
+                {isLoading ? (
+                    <>
+                        <KPISkeleton />
+                        <KPISkeleton />
+                        <KPISkeleton />
+                    </>
+                ) : (
+                    kpis.map((kpi, i) => (
+                        <div key={i} className={cn("bg-white rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all group", kpi.borderColor)}>
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-slate-500 text-[13px] font-bold mb-3">{kpi.title}</p>
+                                    <p className={cn("text-4xl font-black", kpi.color)}>{kpi.value}</p>
+                                </div>
+                                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform", kpi.iconBg)}>
+                                    <kpi.icon className="w-6 h-6 text-white" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
+
+            {/* Analytics Section */}
+            {!isLoading && projectsList.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* Regional Distribution Chart */}
+                    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-black text-slate-800">توزيع المشاريع حسب المناطق</h3>
+                            <div className="p-2 bg-brand-emerald/10 rounded-lg">
+                                <ArrowUpDown className="w-4 h-4 text-brand-emerald" />
+                            </div>
+                        </div>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={regionData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                                    <XAxis type="number" hide />
+                                    <YAxis 
+                                        dataKey="name" 
+                                        type="category" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b' }}
+                                        width={140}
+                                    />
+                                    <Tooltip 
+                                        cursor={{ fill: '#f8fafc' }}
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Bar 
+                                        dataKey="value" 
+                                        fill="#059669" 
+                                        radius={[0, 4, 4, 0]} 
+                                        barSize={24}
+                                        label={{ position: 'right', fill: '#059669', fontSize: 12, fontWeight: 900 }}
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Status Breakdown Chart */}
+                    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-black text-slate-800">حالة خط الإنتاج</h3>
+                            <div className="p-2 bg-amber-500/10 rounded-lg">
+                                <Clock className="w-4 h-4 text-amber-600" />
+                            </div>
+                        </div>
+                        <div className="h-[300px] w-full flex items-center justify-center">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={statusData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {statusData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip 
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Legend 
+                                        verticalAlign="bottom" 
+                                        align="center"
+                                        formatter={(value) => <span className="text-xs font-bold text-slate-600 mr-2">{value}</span>}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Consultant Submissions Table */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -154,7 +257,13 @@ export const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {projectsList.length > 0 ? projectsList.map((row) => {
+                            {isLoading ? (
+                                <>
+                                    <DashboardTableSkeleton />
+                                    <DashboardTableSkeleton />
+                                    <DashboardTableSkeleton />
+                                </>
+                            ) : projectsList.length > 0 ? projectsList.map((row) => {
                                 const statusConfig = getStatusConfig(row.status);
                                 return (
                                     <tr key={row.id} className="hover:bg-slate-50/60 transition-colors group">

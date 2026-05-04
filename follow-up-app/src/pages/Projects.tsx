@@ -8,7 +8,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { supabase } from '../lib/supabase';
 import { sendToWebhook } from '../lib/webhook';
-import { sendWelcomeEmail } from '../lib/email';
+import { sendEmailNotification } from '../lib/email';
+import { TableRowSkeleton } from '../components/ui/Skeleton';
 
 export const StatusBadge = ({ status }: { status: ProjectStatus }) => {
     const styles = {
@@ -237,7 +238,11 @@ export const Projects = () => {
 
             if (newUserCredentials) {
                 // Send welcome email to the new consultant
-                await sendWelcomeEmail(newUserCredentials.email, finalConsultantName, newUserCredentials.password);
+                await sendEmailNotification('WELCOME_EMAIL', {
+                    email: newUserCredentials.email,
+                    name: finalConsultantName,
+                    password: newUserCredentials.password
+                });
                 alert(`تم إنشاء المشروع وحساب الاستشاري بنجاح!\n\nبيانات الدخول للاستشاري:\nالمستخدم: ${newUserCredentials.email}\nكلمة المرور: ${newUserCredentials.password}`);
             } else {
                 alert('تم إنشاء المشروع بنجاح!');
@@ -709,32 +714,36 @@ export const Projects = () => {
                 </button>
             </div>
 
-            {/* Projects Table */}
             <div className="glass-card rounded-3xl border-brand-gold/10 overflow-hidden shadow-2xl shadow-brand-emerald/5">
                 <div className="overflow-x-auto">
-                    {isLoading ? (
-                        <div className="p-12 text-center text-brand-emerald font-bold animate-pulse">جاري تحميل المشاريع الهندسية...</div>
-                    ) : (
-                        <table className="w-full text-sm text-right">
-                            <thead className="emerald-gradient text-white border-b border-brand-gold/20">
+                    <table className="w-full text-sm text-right">
+                        <thead className="emerald-gradient text-white border-b border-brand-gold/20">
+                            <tr>
+                                <th className="px-6 py-5 font-serif font-bold text-base">المنطقة</th>
+                                <th className="px-6 py-5 font-bold">رقم القطعة</th>
+                                <th className="px-6 py-5 font-bold">الاستشاري</th>
+                                <th className="px-6 py-5 font-bold">الحالة</th>
+                                <th className="px-6 py-5 font-bold">نسبة الإنجاز</th>
+                                <th className="px-6 py-5 font-bold">آخر تحديث</th>
+                                <th className="px-6 py-5 font-bold text-left">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {isLoading ? (
+                                <>
+                                    <TableRowSkeleton />
+                                    <TableRowSkeleton />
+                                    <TableRowSkeleton />
+                                    <TableRowSkeleton />
+                                    <TableRowSkeleton />
+                                </>
+                            ) : filteredProjects.length === 0 ? (
                                 <tr>
-                                    <th className="px-6 py-5 font-serif font-bold text-base">المنطقة</th>
-                                    <th className="px-6 py-5 font-bold">رقم القطعة</th>
-                                    <th className="px-6 py-5 font-bold">الاستشاري</th>
-                                    <th className="px-6 py-5 font-bold">الحالة</th>
-                                    <th className="px-6 py-5 font-bold">نسبة الإنجاز</th>
-                                    <th className="px-6 py-5 font-bold">آخر تحديث</th>
-                                    <th className="px-6 py-5 font-bold text-left">إجراءات</th>
+                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
+                                        {searchQuery ? 'لا توجد نتائج تطابق بحثك' : 'لا توجد مشاريع مضافة حالياً'}
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredProjects.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
-                                            {searchQuery ? 'لا توجد نتائج تطابق بحثك' : 'لا توجد مشاريع مضافة حالياً'}
-                                        </td>
-                                    </tr>
-                                ) : (
+                            ) : (
                                     filteredProjects.map((project) => (
                                         <tr key={project.id} className="hover:bg-slate-50/80 transition-colors group">
                                             <td className="px-6 py-4 font-medium text-slate-900">
@@ -781,9 +790,8 @@ export const Projects = () => {
                                         </tr>
                                     ))
                                 )}
-                            </tbody>
-                        </table>
-                    )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             {/* Confirmation Dialog */}

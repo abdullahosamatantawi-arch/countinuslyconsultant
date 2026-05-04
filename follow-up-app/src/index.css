@@ -81,4 +81,13 @@
   .navy-gradient {
     @apply bg-gradient-to-b from-[#0f172a] to-[#1e293b];
   }
+
+  /* Shimmer Animation */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite linear;
+  }
 }

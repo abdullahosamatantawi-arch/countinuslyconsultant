@@ -8,33 +8,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { supabase } from '../lib/supabase';
 import { MOCK_USERS } from '../mocks/users';
 
-const sendEmailNotification = async (toEmail: string, toName: string, subject: string, message: string, projectName: string) => {
-    // Use relative path for Vite proxy (prevents CORS issues on localhost)
-    const proxyPath = '/n8n-email-webhook';
-    
-    console.log(`Sending email notification to ${toEmail} via local proxy...`);
-    
-    try {
-        const response = await fetch(proxyPath, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                to_email: toEmail,
-                to_name: toName,
-                subject: subject,
-                message: message,
-                project_name: projectName,
-                timestamp: new Date().toISOString()
-            })
-        });
-
-        if (!response.ok) throw new Error(`Status: ${response.status}`);
-        console.log(`Email notification triggered successfully via n8n`);
-    } catch (error: any) {
-        console.error('Failed to trigger email webhook:', error);
-        // Silently fail in UI but log for debugging to avoid blocking the user
-    }
-};
+import { sendEmailNotification } from '../lib/email';
 
 const uploadFile = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split('.').pop();
@@ -676,8 +650,14 @@ export const ProjectDetails = () => {
                 }
 
                 if (consultantEmail) {
-                    const emailMsg = `تم اعتماد مرحلة "${newStages[stageIndex].name}" في مشروع ${project.mosque_name}. يمكنك المتابعة للمرحلة التالية.`;
-                    sendEmailNotification(consultantEmail, consultantName, `اعتماد مخطط: ${project.mosque_name}`, emailMsg, project.mosque_name || '');
+                    await sendEmailNotification('STAGE_STATUS_UPDATE', {
+                        email: consultantEmail,
+                        name: consultantName,
+                        projectName: project.mosque_name || '',
+                        stageName: newStages[stageIndex].name,
+                        status: 'مكتمل',
+                        message: `تم اعتماد مرحلة "${newStages[stageIndex].name}" بنجاح.`
+                    });
                 }
 
                 alert('تم التوقيع والمزامنة بنجاح!');
@@ -749,8 +729,13 @@ export const ProjectDetails = () => {
         }
 
         if (consultantEmail) {
-            const emailMsg = `هناك تعديلات مطلوبة في مرحلة "${newStages[stageIndex].name}" لمشروع ${project.mosque_name}.\nالملاحظات: ${modDetails.comments}`;
-            sendEmailNotification(consultantEmail, consultantName, `تعديلات مطلوبة: ${project.mosque_name}`, emailMsg, project.mosque_name || '');
+            await sendEmailNotification('MODIFICATION_REQUEST', {
+                email: consultantEmail,
+                name: consultantName,
+                projectName: project.mosque_name || '',
+                stageName: newStages[stageIndex].name,
+                message: modDetails.comments
+            });
         } else {
             alert('لم يتم العثور على البريد الإلكتروني للاستشاري، لن يتم إرسال إيميل.');
         }

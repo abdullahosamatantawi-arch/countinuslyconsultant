@@ -11,16 +11,22 @@ import {
   ChevronRight, 
   ChevronLeft, 
   CheckCircle2, 
-  X,
+  FileText,
+  UploadCloud,
+  Sparkles,
+  Loader2,
   ShieldCheck,
-  FileText
+  X,
+  AlertCircle as AlertIcon
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { sendConsultantApplication } from '../lib/webhook';
+import { extractLicenseData } from '../lib/aiService';
+import { consultantApplicationSchema } from '../lib/validations';
 
 const steps = [
-  { id: 1, title: 'بيانات الشركة', icon: Building2 },
+  { id: 1, title: 'التحقق من المكتب', icon: ShieldCheck },
   { id: 2, title: 'معلومات التواصل', icon: User },
   { id: 3, title: 'التخصص والخبرة', icon: Briefcase },
   { id: 4, title: 'المراجعة', icon: ShieldCheck },
@@ -31,6 +37,8 @@ export const ConsultantRegistration = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     company_name: '',
     license_number: '',
@@ -40,6 +48,7 @@ export const ConsultantRegistration = () => {
     specialization: '',
     experience_years: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -49,12 +58,76 @@ export const ConsultantRegistration = () => {
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, steps.length));
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
+  const handleLicenseUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    setExtractionError(null);
+
+    try {
+      // Direct call to our retry-enabled service
+      const result = await extractLicenseData(file);
+      
+      if (result.success) {
+        setFormData(prev => ({
+          ...prev,
+          company_name: result.company_name,
+          license_number: result.license_number
+        }));
+        setIsSuccess(true);
+        // Professional pause before moving to next step
+        setTimeout(() => {
+          setIsSuccess(false);
+          nextStep();
+        }, 1800);
+      } else {
+        setExtractionError(result.message || 'نعتذر، لم نتمكن من قراءة البيانات بدقة بعد عدة محاولات. يرجى إدخالها يدوياً.');
+      }
+    } catch (err: any) {
+      let errorMsg = 'عذراً، محرك التحليل الذكي مشغول حالياً. يرجى المحاولة لاحقاً أو إدخال البيانات يدوياً.';
+      
+      if (err.message?.includes('404')) {
+        errorMsg = 'لم يتم العثور على محرك التحليل (404). يرجى التأكد من تفعيل Workflow n8n وإعادة تشغيل التيرمينال (npm run dev) لتفعيل الإعدادات الجديدة.';
+      }
+      
+      setExtractionError(errorMsg);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({}); // Reset errors
+
+    // 1. Validate Form Data with Zod
+    const result = consultantApplicationSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message;
+        }
+      });
+      setErrors(fieldErrors);
+      
+      // If the error is in a different step, we should ideally jump there, 
+      // but for now, we'll just stop the submission if it's the final step.
+      if (currentStep === 4) {
+        alert('يرجى تصحيح الأخطاء في البيانات المدخلة');
+        return;
+      }
+    }
+
     if (currentStep < 4) {
       nextStep();
       return;
     }
+
+    // Only proceed if validation passed
+    if (!result.success) return;
 
     setIsSubmitting(true);
     try {
@@ -62,15 +135,15 @@ export const ConsultantRegistration = () => {
       const { error } = await supabase
         .from('consultant_applications')
         .insert([{
-          ...formData,
-          experience_years: parseInt(formData.experience_years) || 0
+          ...result.data,
+          submitted_at: new Date().toISOString()
         }]);
 
       if (error) throw error;
 
       // 2. Send to n8n Webhook
       await sendConsultantApplication({
-        ...formData,
+        ...result.data,
         submitted_at: new Date().toISOString()
       });
 
@@ -171,33 +244,102 @@ export const ConsultantRegistration = () => {
               
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                 {currentStep === 1 && (
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <h2 className="text-2xl font-black text-slate-800">بيانات المكتب الهندسي</h2>
-                      <p className="text-slate-400 text-sm">أدخل البيانات الرسمية للمكتب كما هي مسجلة في التراخيص</p>
+                  <div className="space-y-8 py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="text-center max-w-lg mx-auto mb-8">
+                      <h3 className="text-2xl font-black text-emerald-900 mb-3">التحقق من الهوية الهندسية</h3>
+                      <p className="text-emerald-700/70 text-sm leading-relaxed">
+                        يرجى رفع نسخة من الرخصة التجارية سارية المفعول للتحقق من بيانات المكتب والبدء في طلب التسجيل تلقائياً.
+                      </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-600">اسم المكتب / الشركة <span className="text-red-500">*</span></label>
-                        <div className="relative group">
-                          <Building2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                          <input 
-                            required name="company_name" value={formData.company_name} onChange={handleInputChange}
-                            className="w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
-                            placeholder="اسم الشركة الكامل"
-                          />
-                        </div>
+
+                    <div className="relative group max-w-2xl mx-auto">
+                      <div className={cn(
+                        "relative overflow-hidden rounded-[2.5rem] border-2 border-dashed transition-all duration-500",
+                        isAnalyzing ? "border-emerald-500 bg-emerald-50/30" : "border-emerald-200 hover:border-emerald-400 bg-white shadow-xl shadow-emerald-900/5",
+                        isSuccess ? "border-emerald-500 bg-emerald-50/50 ring-4 ring-emerald-500/10" : ""
+                      )}>
+                        {isAnalyzing ? (
+                          <div className="py-20 flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-300">
+                            <div className="relative">
+                              <Loader2 className="w-16 h-16 text-emerald-600 animate-spin mb-4" />
+                              <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-amber-500 animate-pulse" />
+                            </div>
+                            <h4 className="text-emerald-900 font-black text-xl mb-2">جاري تحليل الرخصة ذكياً...</h4>
+                            <p className="text-emerald-600/70 text-sm font-bold animate-pulse">يتم الآن استخراج بيانات المكتب والتحقق من صحتها</p>
+                            
+                            {/* Shimmer Scan Effect */}
+                            <div className="absolute inset-0 pointer-events-none opacity-20">
+                              <div className="absolute top-0 w-full h-1/2 bg-gradient-to-b from-emerald-400 to-transparent -translate-y-full animate-shimmer" />
+                            </div>
+                          </div>
+                        ) : isSuccess ? (
+                          <div className="py-20 flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500">
+                            <div className="relative mb-6">
+                              <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-200 animate-bounce">
+                                <ShieldCheck className="w-12 h-12 text-white" />
+                              </div>
+                              <CheckCircle2 className="absolute -bottom-1 -right-1 w-8 h-8 text-emerald-600 bg-white rounded-full" />
+                            </div>
+                            <h4 className="text-emerald-900 font-black text-2xl mb-2">تم التحقق بنجاح!</h4>
+                            <p className="text-emerald-600 font-bold mb-1">{formData.company_name}</p>
+                            <p className="text-emerald-500/80 text-xs text-arabic-nums">رخصة رقم: {formData.license_number}</p>
+                            <div className="mt-6 flex items-center justify-center gap-2 text-emerald-600 text-sm font-bold">
+                              <span>جاري نقلك للخطوة التالية</span>
+                              <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-16 px-8 text-center flex flex-col items-center group-hover:scale-[1.02] transition-transform duration-500">
+                            <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center mb-6 border border-emerald-100 group-hover:bg-emerald-100 group-hover:rotate-6 transition-all duration-500">
+                              <UploadCloud className="w-10 h-10 text-emerald-600" />
+                            </div>
+                            <h4 className="text-emerald-900 font-black text-xl mb-3">رفع الرخصة الموحدة (PDF أو صورة)</h4>
+                            <p className="text-emerald-700/60 text-sm mb-8 max-w-sm font-medium leading-relaxed">
+                              سيقوم النظام باستخراج اسم المكتب ورقم الرخصة تلقائياً لبدء عملية التسجيل.
+                            </p>
+                            
+                            <span className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-900/20 transition-all cursor-pointer group/btn">
+                              <Sparkles className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" />
+                              ابدأ التحقق الآن
+                            </span>
+                          </div>
+                        )}
+
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={handleLicenseUpload}
+                          className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                          disabled={isAnalyzing || isSuccess}
+                        />
+                        
+                        {extractionError && (
+                          <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 text-amber-700 bg-amber-50/90 backdrop-blur px-5 py-4 rounded-2xl text-[13px] font-bold border border-amber-100 shadow-lg animate-in slide-in-from-bottom-2">
+                            <AlertIcon className="w-5 h-5 text-amber-500 shrink-0" />
+                            <span className="leading-relaxed flex-1">{extractionError}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExtractionError(null);
+                              }}
+                              className="text-amber-900/40 hover:text-amber-900 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-600">رقم الرخصة التجارية <span className="text-red-500">*</span></label>
-                        <div className="relative group">
-                          <FileText className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                          <input 
-                            required name="license_number" value={formData.license_number} onChange={handleInputChange}
-                            className="w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
-                            placeholder="رقم الرخصة الموحد"
-                          />
-                        </div>
+                    </div>
+
+                    {/* Progress Info */}
+                    <div className="flex justify-center items-center gap-8 text-emerald-400">
+                      <div className="flex items-center gap-2 opacity-60">
+                        <Building2 className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">معالجة فورية</span>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-60">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">تحقق آمن</span>
                       </div>
                     </div>
                   </div>
@@ -216,9 +358,13 @@ export const ConsultantRegistration = () => {
                           <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                           <input 
                             required name="contact_person" value={formData.contact_person} onChange={handleInputChange}
-                            className="w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
+                            className={cn(
+                              "w-full pr-12 pl-4 py-4 bg-slate-50 border rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold",
+                              errors.contact_person ? "border-red-300 bg-red-50/10" : "border-slate-100"
+                            )}
                             placeholder="الاسم الثلاثي"
                           />
+                          {errors.contact_person && <p className="text-[10px] text-red-500 font-bold mt-1.5 mr-1 animate-in fade-in slide-in-from-right-1">{errors.contact_person}</p>}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,9 +374,13 @@ export const ConsultantRegistration = () => {
                             <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                             <input 
                               required type="email" name="email" value={formData.email} onChange={handleInputChange}
-                              className="w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
+                              className={cn(
+                                "w-full pr-12 pl-4 py-4 bg-slate-50 border rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold",
+                                errors.email ? "border-red-300 bg-red-50/10" : "border-slate-100"
+                              )}
                               placeholder="example@mail.com"
                             />
+                            {errors.email && <p className="text-[10px] text-red-500 font-bold mt-1.5 mr-1 animate-in fade-in slide-in-from-right-1">{errors.email}</p>}
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -239,9 +389,13 @@ export const ConsultantRegistration = () => {
                             <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                             <input 
                               required type="tel" name="phone" value={formData.phone} onChange={handleInputChange}
-                              className="w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-left"
+                              className={cn(
+                                "w-full pr-12 pl-4 py-4 bg-slate-50 border rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold text-left",
+                                errors.phone ? "border-red-300 bg-red-50/10" : "border-slate-100"
+                              )}
                               placeholder="05x xxx xxxx"
                             />
+                            {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1.5 mr-1 animate-in fade-in slide-in-from-right-1">{errors.phone}</p>}
                           </div>
                         </div>
                       </div>
@@ -260,7 +414,10 @@ export const ConsultantRegistration = () => {
                         <label className="text-sm font-black text-slate-600">مجال التخصص <span className="text-red-500">*</span></label>
                         <select 
                           required name="specialization" value={formData.specialization} onChange={handleInputChange}
-                          className="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold cursor-pointer"
+                          className={cn(
+                            "w-full px-4 py-4 bg-slate-50 border rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold cursor-pointer",
+                            errors.specialization ? "border-red-300 bg-red-50/10" : "border-slate-100"
+                          )}
                         >
                           <option value="">-- اختر التخصص --</option>
                           <option value="architectural">معماري وانشائي</option>
@@ -269,6 +426,7 @@ export const ConsultantRegistration = () => {
                           <option value="landscaping">تنسيق حدائق</option>
                           <option value="consultancy">اشراف وبناء</option>
                         </select>
+                        {errors.specialization && <p className="text-[10px] text-red-500 font-bold mt-1.5 mr-1 animate-in fade-in slide-in-from-right-1">{errors.specialization}</p>}
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-black text-slate-600">سنوات الخبرة في المجال <span className="text-red-500">*</span></label>
@@ -276,9 +434,13 @@ export const ConsultantRegistration = () => {
                           <Award className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
                           <input 
                             required type="number" name="experience_years" value={formData.experience_years} onChange={handleInputChange}
-                            className="w-full pr-12 pl-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold"
+                            className={cn(
+                              "w-full pr-12 pl-4 py-4 bg-slate-50 border rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 focus:bg-white outline-none transition-all font-bold",
+                              errors.experience_years ? "border-red-300 bg-red-50/10" : "border-slate-100"
+                            )}
                             placeholder="مثال: 10"
                           />
+                          {errors.experience_years && <p className="text-[10px] text-red-500 font-bold mt-1.5 mr-1 animate-in fade-in slide-in-from-right-1">{errors.experience_years}</p>}
                         </div>
                       </div>
                     </div>
