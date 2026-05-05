@@ -1,3 +1,0 @@
-/n8n-webhook https://n8n.srv968918.hstgr.cloud/webhook/testingemails 200!
-/n8n-email-webhook https://n8n.srv968918.hstgr.cloud/webhook/testingemails 200!
-/* /index.html 200

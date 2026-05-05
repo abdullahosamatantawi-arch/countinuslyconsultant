@@ -1,5 +1,4 @@
-node_modules/
-.netlify/
-.agents/
-scratch/
-*.log
+node_modules
+
+# Local Netlify folder
+.netlify
