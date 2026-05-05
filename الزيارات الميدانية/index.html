@@ -1321,10 +1321,30 @@
             });
 
             try {
-                const response = await fetch(FORM_URL, {
+                // Submit to n8n webhook
+                const n8nPromise = fetch(FORM_URL, {
                     method: 'POST',
                     body: formDataObj
                 });
+
+                // Prepare JSON data for Resend email function
+                const emailData = {
+                    region: regionSelect.value,
+                    engineer: engineerSelect.value,
+                    plot: plotSelect.value,
+                    progress: progressInput.value,
+                    work: workTextarea.value
+                };
+
+                // Trigger Netlify Serverless Function to send email
+                const emailPromise = fetch('/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(emailData)
+                }).catch(err => console.error('Email function error:', err));
+
+                // Wait for both to complete
+                await Promise.allSettled([n8nPromise, emailPromise]);
 
                 return { success: true };
             } catch (error) {

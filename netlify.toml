@@ -1,6 +1,7 @@
 [build]
   publish = "."
   command = "python sync_plots.py"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/n8n-webhook"
