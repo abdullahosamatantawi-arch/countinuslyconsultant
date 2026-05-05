@@ -7,11 +7,11 @@ headers = []
 [functions."*"]
 
 [build]
-publish = "C:\\Users\\Abood\\.gemini\\antigravity\\scratch\\modern_form_demo\\follow-up-app\\follow-up-app\\dist"
+publish = "C:\\Users\\Abood\\.gemini\\antigravity\\scratch\\modern_form_demo\\follow-up-app"
 publishOrigin = "config"
 commandOrigin = "config"
 base = "C:\\Users\\Abood\\.gemini\\antigravity\\scratch\\modern_form_demo\\follow-up-app"
-command = "cd follow-up-app && npm run build"
+command = "python sync_plots.py"
 
 [build.environment]
 
