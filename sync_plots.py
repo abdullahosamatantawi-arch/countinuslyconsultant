@@ -10,11 +10,28 @@ HTML_PATH = 'index.html'
 
 def sync():
     print(f"Fetching data from {SHEET_URL}...")
+    content = None
     try:
         response = urllib.request.urlopen(SHEET_URL)
         content = response.read().decode('utf-8')
     except Exception as e:
-        print(f"Error fetching data: {e}")
+        print(f"urllib failed: {e}. Trying curl.exe fallback...")
+        try:
+            import subprocess
+            subprocess.run(['curl.exe', '-L', SHEET_URL, '-o', 'temp_data.csv'], check=True)
+            if os.path.exists('temp_data.csv'):
+                with open('temp_data.csv', 'r', encoding='utf-8') as f:
+                    content = f.read()
+                os.remove('temp_data.csv')
+        except Exception as e2:
+            print(f"curl.exe fallback failed: {e2}")
+            if os.path.exists('data_new.csv'):
+                print("Using data_new.csv as fallback.")
+                with open('data_new.csv', 'r', encoding='utf-8') as f:
+                    content = f.read()
+    
+    if not content:
+        print("Error: Could not fetch data.")
         return
 
     reader = csv.reader(io.StringIO(content))
