@@ -1,6 +1,6 @@
 [build]
   publish = "../follow-up-app/dist"
-  command = "python sync_plots.py && cd ../follow-up-app && npm install && npm run build && cp ../الزيارات\ الميدانية/index.html dist/form.html"
+  command = 'python sync_plots.py && cd ../follow-up-app && npm install && npm run build && cp "../الزيارات الميدانية/index.html" dist/form.html'
 
 [[redirects]]
   from = "/n8n-webhook"
