@@ -208,7 +208,7 @@ export const Dashboard = () => {
                                         paddingAngle={5}
                                         dataKey="value"
                                     >
-                                        {statusData.map((entry, index) => (
+                                        {statusData.map((_, index) => (
                                             <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                         ))}
                                     </Pie>
