@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1B5E20;
+  --color-secondary: #C9A84C;
+  --color-accent: #00695C;
+  --color-cream: #FAFAF7;
+  --color-dark: #1A1A2E;
+
+  --font-cairo: "Cairo", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+}
+
+@layer base {
+  :root {
+    background-color: var(--color-cream);
+    color: var(--color-dark);
+  }
+
+  [dir="rtl"] {
+    font-family: var(--font-cairo);
+  }
+
+  [dir="ltr"] {
+    font-family: var(--font-montserrat);
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+/* Custom Islamic Patterns & Styles */
+.islamic-pattern {
+  background-image: url("/pattern-bg.png");
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #C9A84C 0%, #E5C36E 50%, #C9A84C 100%);
+}
+
+.green-gradient {
+  background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+}

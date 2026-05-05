@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام مشاركة الملفات - دائرة الشؤون الإسلامية</title>
+    <meta name="description" content="نظام مشاركة الملفات والرسائل بين موظفي دائرة الشؤون الإسلامية بالشارقة">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M32 4L8 20V44L32 60L56 44V20L32 4Z" stroke="currentColor" stroke-width="2"
+                            fill="none" />
+                        <path d="M32 12L16 22V42L32 52L48 42V22L32 12Z" fill="currentColor" opacity="0.15" />
+                        <path d="M24 28H40V30H24V28ZM24 33H36V35H24V33ZM24 38H40V40H24V38Z" fill="currentColor" />
+                        <path d="M32 18L44 25V39L32 46L20 39V25L32 18Z" stroke="currentColor" stroke-width="1.5"
+                            fill="none" />
+                    </svg>
+                </div>
+                <h1>نظام مشاركة الملفات</h1>
+                <p>دائرة الشؤون الإسلامية بالشارقة</p>
+            </div>
+            <div class="login-form">
+                <label class="login-label">اختر القسم</label>
+                <select id="departmentSelect" class="login-select">
+                    <option value="">-- اختر القسم --</option>
+                    <option value="head">مكتب رئيس الدائرة</option>
+                    <option value="it">مكتب تقنية المعلومات</option>
+                    <option value="engineering">مكتب القسم الهندسي</option>
+                    <option value="finance">مكتب القسم المالي</option>
+                    <option value="procurement">قسم المشتريات</option>
+                </select>
+                <label class="login-label">كلمة المرور</label>
+                <input type="password" id="loginPassword" class="login-input" placeholder="أدخل كلمة المرور">
+                <div class="login-error hidden" id="loginError">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                    </svg>
+                    <span id="loginErrorText">كلمة المرور غير صحيحة</span>
+                </div>
+                <button id="loginBtn" class="login-btn" disabled>
+                    <span>دخول</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="login-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M32 4L8 20V44L32 60L56 44V20L32 4Z" stroke="currentColor" stroke-width="2"
+                            fill="none" />
+                        <path d="M32 12L16 22V42L32 52L48 42V22L32 12Z" fill="currentColor" opacity="0.15" />
+                        <path d="M24 28H40V30H24V28ZM24 33H36V35H24V33ZM24 38H40V40H24V38Z" fill="currentColor" />
+                    </svg>
+                </div>
+                <div class="sidebar-title">
+                    <h2>مشاركة الملفات</h2>
+                    <span class="sidebar-subtitle">دائرة الشؤون الإسلامية</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="inbox" id="navInbox">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-6l-2 3H10l-2-3H2" />
+                        <path
+                            d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
+                    </svg>
+                    <span>الوارد</span>
+                    <span class="badge" id="inboxBadge"></span>
+                </button>
+                <button class="nav-item" data-view="sent" id="navSent">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                    <span>الصادر</span>
+                </button>
+                <button class="nav-item" data-view="routing" id="navRouting">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 3 21 3 21 8" />
+                        <line x1="4" y1="20" x2="21" y2="3" />
+                        <polyline points="21 16 21 21 16 21" />
+                        <line x1="15" y1="15" x2="21" y2="21" />
+                        <line x1="4" y1="4" x2="9" y2="9" />
+                    </svg>
+                    <span>التحويلات</span>
+                    <span class="badge" id="routingBadge"></span>
+                </button>
+                <button class="nav-item" data-view="files" id="navFiles">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span>الملفات</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar" id="userAvatar">م</div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName">الموظف</span>
+                        <span class="user-dept" id="userDept">القسم</span>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn" title="تسجيل الخروج">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-title">
+                    <h1 id="viewTitle">الوارد</h1>
+                    <span class="message-count" id="messageCount"></span>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="btn-compose" id="composeBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        <span>رسالة جديدة</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Message List View -->
+            <div class="content-view active" id="inboxView">
+                <div class="messages-list" id="inboxList">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" opacity="0.3">
+                            <path d="M22 12h-6l-2 3H10l-2-3H2" />
+                            <path
+                                d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
+                        </svg>
+                        <p>لا توجد رسائل واردة</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-view" id="sentView">
+                <div class="messages-list" id="sentList">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" opacity="0.3">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                        <p>لا توجد رسائل صادرة</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-view" id="routingView">
+                <div class="messages-list" id="routingList">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" opacity="0.3">
+                            <polyline points="16 3 21 3 21 8" />
+                            <line x1="4" y1="20" x2="21" y2="3" />
+                        </svg>
+                        <p>لا توجد تحويلات حالياً</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-view" id="filesView">
+                <div class="files-grid" id="filesList">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" opacity="0.3">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <p>لا توجد ملفات</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Detail View -->
+            <div class="content-view" id="messageDetailView">
+                <div class="message-detail" id="messageDetail"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Compose Modal -->
+    <div class="modal-overlay" id="composeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>رسالة جديدة</h2>
+                <button class="modal-close" id="closeCompose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>إرسال إلى</label>
+                    <select id="msgRecipient" class="form-select">
+                        <option value="">-- اختر القسم --</option>
+                        <option value="head">مكتب رئيس الدائرة</option>
+                        <option value="it">مكتب تقنية المعلومات</option>
+                        <option value="engineering">مكتب القسم الهندسي</option>
+                        <option value="finance">مكتب القسم المالي</option>
+                        <option value="procurement">قسم المشتريات</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الموضوع</label>
+                    <input type="text" id="msgSubject" class="form-input" placeholder="أدخل موضوع الرسالة">
+                </div>
+                <div class="form-group">
+                    <label>الأولوية</label>
+                    <select id="msgPriority" class="form-select">
+                        <option value="normal">عادي</option>
+                        <option value="high">مستعجل</option>
+                        <option value="urgent">عاجل جداً</option>
+                    </select>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="sendToEmail" class="form-checkbox">
+                        <span>إرسال نسخة إلى البريد الإلكتروني للقسم</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>نص الرسالة</label>
+                    <textarea id="msgBody" class="form-textarea" rows="6" placeholder="اكتب رسالتك هنا..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>إرفاق ملفات</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="fileInput" multiple hidden>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <p>اسحب الملفات هنا أو <span class="upload-link">اختر من الجهاز</span></p>
+                        <span class="upload-hint">PDF, Word, Excel, صور, وغيرها</span>
+                    </div>
+                    <div class="attached-files" id="attachedFiles"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCompose">إلغاء</button>
+                <button class="btn btn-primary" id="sendMessage">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                    <span>إرسال</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Editor Modal -->
+    <div class="modal-overlay" id="editorModal">
+        <div class="modal modal-wide">
+            <div class="modal-header">
+                <h2 id="editorTitle">تعديل الملف</h2>
+                <button class="modal-close" id="closeEditor">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea id="fileEditorContent" class="file-editor"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEdit">إلغاء</button>
+                <button class="btn btn-primary" id="saveEdit">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    <span>حفظ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Routing Action Modal removed - direct messaging only -->
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

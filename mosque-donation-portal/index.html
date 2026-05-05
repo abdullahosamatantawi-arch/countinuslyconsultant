@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/mosque-icon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <meta name="theme-color" content="#1a6b52" />
+    <link rel="apple-touch-icon" href="/brand-logo-official.png" />
+    <meta name="description" content="إدارة بناء ورعاية المساجد — دائرة الشؤون الإسلامية الشارقة" />
+    <title>إدارة بناء ورعاية المساجد | دائرة الشؤون الإسلامية - الشارقة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet" />
+    <script>
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+        var root = document.getElementById('root');
+        if (root && root.innerHTML.indexOf('جاري') !== -1) {
+          root.innerHTML = '<div style="padding: 20px; color: #1a6b52; text-align: center; font-family: sans-serif;">' +
+            '<h3>حدث خطأ أثناء تحميل المنصة</h3>' +
+            '<p style="font-size: 14px; color: red;">' + msg + '</p>' +
+            '<button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #1a6b52; color: white; border: none; border-radius: 4px;">إعادة التحميل</button>' +
+            '</div>';
+        }
+        return false;
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; color: #1a6b52; font-weight: bold;">
+        جاري تحميل المنصة...
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

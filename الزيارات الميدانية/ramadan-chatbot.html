@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شات بوت فعاليات رمضان - دائرة الشؤون الإسلامية</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 9999;
+        }
+
+        .chatbot-button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00a86b 0%, #007a4d 100%);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 168, 107, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .chatbot-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 32px rgba(0, 168, 107, 0.5);
+        }
+
+        .chatbot-button svg {
+            width: 35px;
+            height: 35px;
+            fill: white;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 8px 24px rgba(0, 168, 107, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 8px 32px rgba(0, 168, 107, 0.6);
+            }
+        }
+
+        .chatbot-window {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            width: 400px;
+            max-width: calc(100vw - 40px);
+            height: 600px;
+            max-height: calc(100vh - 140px);
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        .chatbot-window.active {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #00a86b 0%, #007a4d 100%);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+
+        .chatbot-logo {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .chatbot-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .chatbot-header-text h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .chatbot-header-text p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chatbot-close {
+            margin-right: auto;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .chatbot-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chatbot-close svg {
+            width: 18px;
+            height: 18px;
+            fill: white;
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.bot .avatar {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #00a86b 0%, #007a4d 100%);
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.bot .avatar svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            max-width: 85%;
+        }
+
+        .message.bot .message-content {
+            border-top-right-radius: 4px;
+        }
+
+        .mosque-buttons {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .mosque-btn {
+            background: linear-gradient(135deg, #00a86b 0%, #007a4d 100%);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 168, 107, 0.2);
+        }
+
+        .mosque-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 168, 107, 0.3);
+        }
+
+        .quran-icon {
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .schedule-table {
+            margin-top: 15px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .schedule-header {
+            background: linear-gradient(135deg, #00a86b 0%, #007a4d 100%);
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .schedule-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.2s;
+        }
+
+        .schedule-row:hover {
+            background: #f8f9fa;
+        }
+
+        .schedule-row:last-child {
+            border-bottom: none;
+        }
+
+        .schedule-days {
+            font-weight: 600;
+            color: #00a86b;
+            font-size: 13px;
+        }
+
+        .schedule-name {
+            color: #495057;
+            font-size: 13px;
+        }
+
+        .schedule-date {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 12px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .ramadan-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .chatbot-window {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 120px);
+                left: 10px;
+                bottom: 90px;
+            }
+
+            .chatbot-container {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chatbot-container">
+        <button class="chatbot-button" id="chatbot-toggle">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12C2 13.93 2.6 15.71 3.63 17.19L2 22L6.81 20.37C8.29 21.4 10.07 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C10.37 20 8.83 19.5 7.53 18.64L7.21 18.43L4.43 19.14L5.15 16.41L4.92 16.07C4 14.72 3.5 13.12 3.5 11.5C3.5 7.36 6.86 4 11 4C15.14 4 18.5 7.36 18.5 11.5C18.5 15.64 15.14 19 11 19H12Z" />
+            </svg>
+        </button>
+
+        <div class="chatbot-window" id="chatbot-window">
+            <div class="chatbot-header">
+                <div class="chatbot-logo">
+                    <img src="logo.png" alt="دائرة الشؤون الإسلامية">
+                </div>
+                <div class="chatbot-header-text">
+                    <h3>فعاليات رمضان 1447</h3>
+                    <p>دائرة الشؤون الإسلامية - الشارقة</p>
+                </div>
+                <button class="chatbot-close" id="chatbot-close">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="chatbot-messages" id="chatbot-messages"></div>
+        </div>
+    </div>
+
+    <script>
+        const chatbotToggle = document.getElementById('chatbot-toggle');
+        const chatbotWindow = document.getElementById('chatbot-window');
+        const chatbotClose = document.getElementById('chatbot-close');
+        const chatbotMessages = document.getElementById('chatbot-messages');
+
+        const mosques = {
+            'mosque1': {
+                name: 'مسجد الأسوة الحسنة',
+                schedule: [
+                    { days: '1-2', dates: '18-19 فبراير', reader: 'عمار احمد ساغير' },
+                    { days: '3-4', dates: '20-21 فبراير', reader: 'أحمد جاد' },
+                    { days: '5-6', dates: '22-23 فبراير', reader: 'أحمد مختار مانزو' },
+                    { days: '7-8', dates: '24-25 فبراير', reader: 'أحمد عبدالكريم بن عيد' },
+                    { days: '9-10', dates: '26-27 فبراير', reader: 'أكرم عبدالعزيز' },
+                    { days: '11-12', dates: '28 فبراير - 1 مارس', reader: 'حسن سيد عيسى' },
+                    { days: '13-14', dates: '2-3 مارس', reader: 'الزبير عبدالله عامر' },
+                    { days: '15-16', dates: '4-5 مارس', reader: 'عبدالله إسماعيل عبدالله' },
+                    { days: '17-18', dates: '6-7 مارس', reader: 'عبدالرزاق بوكار' },
+                    { days: '19-20', dates: '8-9 مارس', reader: 'أحمد عبدالرزاق نصر' }
+                ]
+            },
+            'mosque2': {
+                name: 'مسجد الشهيد يوسف العبيدلي',
+                schedule: [
+                    { days: '1-30', dates: 'طوال الشهر', reader: 'سيتم الإعلان قريباً' }
+                ]
+            },
+            'mosque3': {
+                name: 'مسجد عمار بن ياسر',
+                schedule: [
+                    { days: '1-30', dates: 'طوال الشهر', reader: 'سيتم الإعلان قريباً' }
+                ]
+            }
+        };
+
+        function addMessage(content, isBot = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot' : 'user'}`;
+
+            if (isBot) {
+                messageDiv.innerHTML = `
+                    <div class="avatar">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2L2 7V17H22V7L12 2M12 4.18L19.83 8H4.17L12 4.18M11 11V14H13V11H16V9H13V6H11V9H8V11H11Z"/>
+                        </svg>
+                    </div>
+                    <div class="message-content">${content}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            }
+
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        function showWelcome() {
+            const welcomeContent = `
+                <div class="welcome-message">
+                    <div class="ramadan-icon">🌙</div>
+                    <h3 style="color: #00a86b; margin-bottom: 8px;">رمضان كريم</h3>
+                    <p style="color: #6c757d; font-size: 13px; margin-bottom: 20px;">
+                        اطلع على جدول القراء في مساجد الشارقة
+                    </p>
+                </div>
+                <div class="mosque-buttons">
+                    <button class="mosque-btn" onclick="showMosqueSchedule('mosque1')">
+                        <span class="quran-icon">📖</span> مسجد الأسوة الحسنة
+                    </button>
+                    <button class="mosque-btn" onclick="showMosqueSchedule('mosque2')">
+                        <span class="quran-icon">📖</span> مسجد الشهيد يوسف العبيدلي
+                    </button>
+                    <button class="mosque-btn" onclick="showMosqueSchedule('mosque3')">
+                        <span class="quran-icon">📖</span> مسجد عمار بن ياسر
+                    </button>
+                </div>
+            `;
+            addMessage(welcomeContent);
+        }
+
+        function showMosqueSchedule(mosqueId) {
+            const mosque = mosques[mosqueId];
+            let scheduleHTML = `
+                <h4 style="color: #00a86b; margin-bottom: 10px; font-size: 15px;">🕌 ${mosque.name}</h4>
+                <p style="color: #6c757d; font-size: 13px; margin-bottom: 8px;">جدول القراء لشهر رمضان 1447هـ</p>
+                <div class="schedule-table">
+                    <div class="schedule-header">
+                        جدول القراء
+                    </div>
+            `;
+
+            mosque.schedule.forEach(item => {
+                scheduleHTML += `
+                    <div class="schedule-row">
+                        <div class="schedule-days">اليوم ${item.days}</div>
+                        <div>
+                            <div class="schedule-name">${item.reader}</div>
+                            <div class="schedule-date">${item.dates}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            scheduleHTML += `
+                </div>
+                <button class="back-btn" onclick="goBack()">↩ العودة للقائمة</button>
+            `;
+
+            addMessage(scheduleHTML);
+        }
+
+        function goBack() {
+            chatbotMessages.innerHTML = '';
+            showWelcome();
+        }
+
+        window.showMosqueSchedule = showMosqueSchedule;
+        window.goBack = goBack;
+
+        chatbotToggle.addEventListener('click', () => {
+            chatbotWindow.classList.add('active');
+            if (chatbotMessages.children.length === 0) {
+                showWelcome();
+            }
+        });
+
+        chatbotClose.addEventListener('click', () => {
+            chatbotWindow.classList.remove('active');
+        });
+    </script>
+</body>
+
+</html>
