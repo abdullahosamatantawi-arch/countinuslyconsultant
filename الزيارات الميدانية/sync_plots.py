@@ -105,6 +105,9 @@ def sync():
             regions[target_region]['plots'].append(plot)
             count += 1
 
+    # Hardcode 'م/محمد حمدي' into 'المساجد الخاصة' to preserve user's manual addition
+    regions['المساجد الخاصة']['engineers'].add('م/محمد حمدي')
+
     for r_name in regions:
         regions[r_name]['engineers'] = sorted(list(regions[r_name]['engineers']))
 
