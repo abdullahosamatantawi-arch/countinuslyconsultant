@@ -6,7 +6,10 @@ import os
 import json
 
 SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dhyw_gFmT0_0d_wzNnCBFDgchUvnlJoSd3U2Ni42CWg/export?format=csv&gid=0'
-HTML_PATH = 'index.html'
+# Get the directory where the script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+HTML_PATH = os.path.join(SCRIPT_DIR, 'index.html')
+OUTPUT_JS_PATH = os.path.join(SCRIPT_DIR, 'output.js')
 
 def sync():
     print(f"Fetching data from {SHEET_URL}...")
@@ -46,14 +49,36 @@ def sync():
     regions = {
         'الشارقه': {'engineers': set(), 'plots': []},
         'المنطقه الوسطى': {'engineers': set(), 'plots': []},
-        'المنطقه الشرقيه': {'engineers': set(), 'plots': []}
+        'المنطقه الشرقيه': {'engineers': set(), 'plots': []},
+        'المساجد الخاصة': {'engineers': set(), 'plots': []}
     }
 
     east_keywords = ['خورفكان', 'كلباء', 'الغيل', 'الحراي', 'الساف', 'البراحة', 'وادي الحلو', 'الطريف', 'الزبارة', 'الشرقية']
     central_keywords = ['المدام', 'الذيد', 'البطائح', 'الخروس', 'السويح', 'الثمامة', 'الرفيعة', 'محافز', 'نزوى', 'الفاية', 'جبل عمر', 'الند', 'الوسطى']
 
+    current_region = 'الشارقه'
     count = 0
     for row in lines:
+        if not any(row): continue
+        
+        # Detect region header row
+        # If the row has very few columns or mostly empty ones, it might be a header
+        first_col = row[0].strip() if len(row) > 0 else ""
+        if len([c for c in row if c.strip()]) == 1:
+            header = first_col.replace('ة', 'ه')
+            if 'الشارقه' in header:
+                current_region = 'الشارقه'
+                continue
+            elif 'الوسطى' in header:
+                current_region = 'المنطقه الوسطى'
+                continue
+            elif 'الشرقيه' in header:
+                current_region = 'المنطقه الشرقيه'
+                continue
+            elif 'الخاصة' in header or 'الخاصه' in header:
+                current_region = 'المساجد الخاصة'
+                continue
+
         if len(row) < 13:
             continue
         
@@ -64,11 +89,14 @@ def sync():
         if not plot:
             continue
             
-        target_region = 'الشارقه'
-        if any(k in sub_region for k in east_keywords):
-            target_region = 'المنطقه الشرقيه'
-        elif any(k in sub_region for k in central_keywords):
-            target_region = 'المنطقه الوسطى'
+        # Fallback to keyword-based detection if we're not sure about the current region
+        # BUT prioritize 'المساجد الخاصة' if it was explicitly set as a header
+        target_region = current_region
+        if current_region != 'المساجد الخاصة':
+            if any(k in sub_region for k in east_keywords):
+                target_region = 'المنطقه الشرقيه'
+            elif any(k in sub_region for k in central_keywords):
+                target_region = 'المنطقه الوسطى'
             
         if eng:
             regions[target_region]['engineers'].add(eng)
@@ -103,16 +131,16 @@ def sync():
             new_html = re.sub(pattern, js_data, html, flags=re.DOTALL)
             with open(HTML_PATH, 'w', encoding='utf-8') as f:
                 f.write(new_html)
-            print(f"Successfully updated {HTML_PATH} with {count} plots.")
+            print(f"Successfully updated HTML file with {count} plots.")
         else:
             print(f"Could not find formData pattern in {HTML_PATH}.")
     else:
         print(f"{HTML_PATH} not found.")
 
     # Also update output.js as a backup
-    with open('output.js', 'w', encoding='utf-8') as out:
+    with open(OUTPUT_JS_PATH, 'w', encoding='utf-8') as out:
         out.write(js_data + "\n")
-    print("Successfully updated output.js.")
+    print(f"Successfully updated output.js backup.")
 
 if __name__ == "__main__":
     sync()
