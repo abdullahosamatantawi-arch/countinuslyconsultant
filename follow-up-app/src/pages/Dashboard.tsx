@@ -1,5 +1,21 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { CheckCircle2, HardHat, Clock, Eye, MoreHorizontal, ArrowUpDown, Bell, Sparkles } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    PlusCircle, 
+    CheckCircle2, 
+    Clock, 
+    AlertCircle, 
+    Bell, 
+    FileText,
+    ArrowRight,
+    MapPin,
+    Search,
+    Filter,
+    HardHat, 
+    Eye, 
+    MoreHorizontal, 
+    ArrowUpDown 
+} from 'lucide-react';
 import { sendEmailNotification } from '../lib/email';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -214,7 +230,7 @@ export const Dashboard = () => {
                 
                 {user?.role === 'manager' && (
                     <button 
-                        onClick={handleSendReminders}
+                        onClick={() => handleSendReminders()}
                         disabled={isSendingReminders}
                         className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
                     >

@@ -197,7 +197,7 @@ export const Login = () => {
                                     </div>
 
                                     <div className="flex justify-between items-center text-xs font-bold px-1">
-                                        <Link to="/forgot-password" size="sm" className="text-teal-600 hover:text-teal-700 hover:underline">{t.forgotPass}</Link>
+                                        <Link to="/forgot-password" className="text-teal-600 hover:text-teal-700 hover:underline">{t.forgotPass}</Link>
                                         <a href="#" className="text-teal-600 hover:text-teal-700 hover:underline">{t.forgotUser}</a>
                                     </div>
                                 </div>

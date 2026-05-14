@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, MapPin, Building2, User, CheckCircle2, Circle, Clock, AlertTriangle, AlertCircle, X, FileText, Upload, UploadCloud, Check, Eye, Layers, Sparkles, ShieldCheck, TriangleAlert, Loader2, Trash2, XCircle } from 'lucide-react';
-import type { ProjectStage, Project } from '../types';
+import type { ProjectStage, Project, StageStatus } from '../types';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -528,7 +528,7 @@ export const ProjectDetails = () => {
 
                 const newStages = stages.map(s => s.id === activeStageId ? {
                     ...s,
-                    status: 'awaiting_approval',
+                    status: 'awaiting_approval' as StageStatus,
                     drawingUrl: publicUrl || s.drawingUrl,
                     dwgUrl: dwgPublicUrl || s.dwgUrl
                 } : s);

@@ -6,8 +6,6 @@ import {
   User, 
   Mail, 
   Phone, 
-  Briefcase, 
-  Award, 
   ChevronRight, 
   ChevronLeft, 
   ShieldCheck,
