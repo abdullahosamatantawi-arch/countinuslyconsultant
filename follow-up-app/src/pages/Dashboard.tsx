@@ -1,16 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-    LayoutDashboard, 
-    PlusCircle, 
     CheckCircle2, 
     Clock, 
-    AlertCircle, 
     Bell, 
-    FileText,
-    ArrowRight,
-    MapPin,
-    Search,
-    Filter,
     HardHat, 
     Eye, 
     MoreHorizontal, 
