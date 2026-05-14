@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import BlueprintComparator from '../components/BlueprintComparator';
 
 const uploadFile = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split('.').pop();
@@ -80,6 +81,7 @@ export const BlueprintComparison = () => {
     const [allComparisons, setAllComparisons] = useState<ComparisonData[]>([]);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(id || null);
     const [projectDetails, setProjectDetails] = useState<ProjectRecord | null>(null);
+    const [aiTab, setAiTab] = useState<'checklist' | 'comparison'>('checklist');
 
     // AI verification
     const [aiPhase, setAiPhase] = useState<'idle' | 'analyzing' | 'results' | 'error'>('idle');
@@ -95,11 +97,11 @@ export const BlueprintComparison = () => {
     useEffect(() => {
         const fetchComparisons = async () => {
             try {
-                // Fetch stages join with projects where name is 'اعتماد معماري' and we have an original drawing
+                // Fetch stages join with projects where stage_type is 'architectural' and we have an original drawing
                 const { data, error } = await supabase
                     .from('project_stages')
                     .select('*, projects(*)')
-                    .eq('name', 'اعتماد معماري')
+                    .eq('stage_type', 'architectural')
                     .not('original_drawing_url', 'is', null);
 
                 if (error) throw error;
@@ -284,7 +286,7 @@ export const BlueprintComparison = () => {
                     signature_url: publicUrl
                 })
                 .eq('project_id', comparisonData.projectId)
-                .eq('name', comparisonData.stageName);
+                .eq('stage_type', 'architectural');
 
             if (updateError) throw updateError;
             
@@ -549,15 +551,46 @@ export const BlueprintComparison = () => {
                         {/* AI Verification */}
                         {hasBothVersions && (
                             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                                <div className="px-5 py-4 bg-gradient-to-l from-indigo-600 to-violet-600 text-white flex items-center gap-3">
-                                    <Sparkles className="w-5 h-5" />
-                                    <div>
-                                        <h4 className="text-sm font-black">التحقق الذكي AI</h4>
-                                        <p className="text-[10px] text-white/60 font-medium">مقارنة تلقائية للتغييرات</p>
+                                <div className="px-5 py-4 bg-gradient-to-l from-indigo-600 to-violet-600 text-white">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <Sparkles className="w-5 h-5" />
+                                        <div>
+                                            <h4 className="text-sm font-black">التحقق الذكي AI</h4>
+                                            <p className="text-[10px] text-white/60 font-medium">مقارنة تلقائية للتغييرات</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex bg-white/10 p-1 rounded-lg">
+                                        <button 
+                                            onClick={() => setAiTab('checklist')}
+                                            className={cn(
+                                                "flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all",
+                                                aiTab === 'checklist' ? "bg-white text-indigo-600 shadow-sm" : "text-white/70 hover:text-white"
+                                            )}
+                                        >
+                                            قائمة التحقق
+                                        </button>
+                                        <button 
+                                            onClick={() => setAiTab('comparison')}
+                                            className={cn(
+                                                "flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all",
+                                                aiTab === 'comparison' ? "bg-white text-indigo-600 shadow-sm" : "text-white/70 hover:text-white"
+                                            )}
+                                        >
+                                            مقارنة تفصيلية
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="p-5">
-                                    {aiPhase === 'analyzing' && (
+                                <div className="p-0">
+                                    {aiTab === 'comparison' ? (
+                                        <div className="scale-90 origin-top -mt-4">
+                                            <BlueprintComparator 
+                                                initialOriginalUrl={comparisonData.originalDrawingUrl}
+                                                initialRevisedUrl={comparisonData.modifiedDrawingUrl}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="p-5">
+                                            {aiPhase === 'analyzing' && (
                                         <div className="text-center py-6 space-y-4">
                                             <div className="relative w-16 h-16 mx-auto">
                                                 <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
@@ -661,6 +694,8 @@ export const BlueprintComparison = () => {
 
                                     {aiPhase === 'idle' && !hasBothVersions && (
                                         <p className="text-center text-xs text-slate-400 py-4">سيبدأ التحقق تلقائياً عند توفر النسختين</p>
+                                    )}
+                                        </div>
                                     )}
                                 </div>
                             </div>

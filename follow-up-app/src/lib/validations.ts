@@ -10,10 +10,10 @@ export const consultantApplicationSchema = z.object({
   contact_person: z.string().min(3, { message: 'الرجاء إدخال الاسم الثلاثي للمسؤول' }),
   email: z.string().email({ message: 'البريد الإلكتروني غير صحيح' }),
   phone: z.string().regex(/^[0-9\s+]{8,}$/, { message: 'رقم الهاتف غير صحيح (8 أرقام على الأقل)' }),
-  specialization: z.string().min(1, { message: 'الرجاء اختيار التخصص' }),
+  specialization: z.string().optional().or(z.literal('')),
   experience_years: z.preprocess(
-    (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().positive({ message: 'سنوات الخبرة يجب أن تكون رقماً موجباً' }).min(1, { message: 'يجب أن يكون لديك سنة خبرة واحدة على الأقل' })
+    (val) => (val === '' || val === undefined ? undefined : typeof val === 'string' ? parseInt(val, 10) : val),
+    z.number().optional()
   ),
 });
 

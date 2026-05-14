@@ -78,7 +78,7 @@ export const Login = () => {
         e.preventDefault();
         setError('');
 
-        const loginEmail = role === 'manager' ? 'admin@mosque.gov.ae' : email;
+        const loginEmail = role === 'manager' ? 'abdalla.alyassi@sia.gov.ae' : email;
         const result = await login(loginEmail, password, role);
 
         if (result.success) {
@@ -114,8 +114,8 @@ export const Login = () => {
                         <span className="text-gray-600 text-sm font-bold">{t.langLabel}</span>
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                     </button>
-                    <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center border border-teal-100">
-                        <img src="https://ui-avatars.com/api/?name=User&background=0d9488&color=fff" alt="User" className="w-8 h-8 rounded-full" />
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-100 overflow-hidden shadow-sm">
+                        <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain" />
                     </div>
                 </div>
             </header>
@@ -197,7 +197,7 @@ export const Login = () => {
                                     </div>
 
                                     <div className="flex justify-between items-center text-xs font-bold px-1">
-                                        <a href="#" className="text-teal-600 hover:text-teal-700 hover:underline">{t.forgotPass}</a>
+                                        <Link to="/forgot-password" size="sm" className="text-teal-600 hover:text-teal-700 hover:underline">{t.forgotPass}</Link>
                                         <a href="#" className="text-teal-600 hover:text-teal-700 hover:underline">{t.forgotUser}</a>
                                     </div>
                                 </div>
@@ -225,7 +225,7 @@ export const Login = () => {
                                 </div>
                                 <p className="text-slate-600 text-sm font-bold">{t.needHelp}</p>
                                 <div className="text-[#0D9488] font-black text-3xl tracking-tight">
-                                    600566665
+                                    0566888697
                                 </div>
                                 <p className="text-teal-800 text-xs font-black opacity-60 uppercase tracking-wider">{t.supportHours}</p>
                             </div>

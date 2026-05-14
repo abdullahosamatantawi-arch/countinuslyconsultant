@@ -48,8 +48,8 @@ export const DashboardLayout = () => {
                 {/* Logo Area */}
                 <div className="p-6 border-b border-white/5">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10 shrink-0">
-                            <img src="/logo-light.png" alt="Logo" className="w-8 h-8 object-contain" />
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border border-white/20 shrink-0 overflow-hidden shadow-inner">
+                            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain p-1" />
                         </div>
                         <div>
                             <h1 className="text-[13px] font-bold text-white leading-tight">إدارة بناء ورعاية المساجد</h1>
@@ -84,8 +84,8 @@ export const DashboardLayout = () => {
                 {/* Sidebar Footer */}
                 <div className="p-4 border-t border-white/5">
                     <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 border border-white/5 mb-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                            {user?.name?.charAt(0) || 'م'}
+                        <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center border border-white/10 shrink-0 overflow-hidden">
+                            <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-white truncate">
@@ -181,8 +181,8 @@ export const DashboardLayout = () => {
 
                             {/* Engineer Profile */}
                             <div className="hidden md:flex items-center gap-3 cursor-pointer hover:bg-slate-50 px-3 py-2 rounded-xl transition-all">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-navy to-navy-light flex items-center justify-center text-white text-sm font-bold">
-                                    {user?.name?.charAt(0) || 'م'}
+                                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border border-slate-100 overflow-hidden shadow-sm">
+                                    <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-bold text-slate-700 leading-tight">

@@ -6,6 +6,7 @@ import { ProjectDetails } from './pages/ProjectDetails';
 import { BlueprintComparison } from './pages/BlueprintComparison';
 import { Login } from './pages/Login';
 import { ConsultantRegistration } from './pages/ConsultantRegistration';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -17,6 +18,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/apply-consultant" element={<ConsultantRegistration />} />
             <Route
               path="/"

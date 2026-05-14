@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, HardHat, Clock, Eye, MoreHorizontal, ArrowUpDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { CheckCircle2, HardHat, Clock, Eye, MoreHorizontal, ArrowUpDown, Bell, Sparkles } from 'lucide-react';
+import { sendEmailNotification } from '../lib/email';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { KPISkeleton, DashboardTableSkeleton } from '../components/ui/Skeleton';
-import { useMemo } from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
     PieChart, Pie, Cell, Legend
@@ -29,6 +29,7 @@ const getStatusConfig = (status: string) => {
 export const Dashboard = () => {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
+    const [isSendingReminders, setIsSendingReminders] = useState(false);
 
     const [projectsList, setProjectsList] = useState<any[]>([]);
 
@@ -62,7 +63,94 @@ export const Dashboard = () => {
         }
     }, [user]);
 
-    useEffect(() => { loadDashboardData(); }, [loadDashboardData]);
+    const checkAndTriggerAutoReminders = useCallback(async () => {
+        if (!user || user.role !== 'manager' || projectsList.length === 0) return;
+
+        try {
+            // 1. Check last execution from Supabase
+            const { data: lastLog } = await supabase
+                .from('automation_logs')
+                .select('created_at')
+                .eq('type', 'weekly_reminder')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            const now = new Date();
+            let shouldRun = false;
+
+            if (!lastLog) {
+                shouldRun = true; // First time run
+            } else {
+                const lastRunDate = new Date(lastLog.created_at);
+                const diffDays = Math.ceil((now.getTime() - lastRunDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (diffDays >= 7) shouldRun = true;
+            }
+
+            if (shouldRun) {
+                console.log("🚀 Starting automatic weekly reminders...");
+                await handleSendReminders(true); // pass true to indicate it's silent/auto
+                
+                // 2. Log the execution
+                await supabase.from('automation_logs').insert([
+                    { type: 'weekly_reminder', triggered_by: user.id }
+                ]);
+            }
+        } catch (err) {
+            console.error("Auto-reminder check failed:", err);
+            // Table might not exist yet, we'll handle gracefully
+        }
+    }, [user, projectsList]);
+
+    const handleSendReminders = async (isSilent = false) => {
+        if (!user || user.role !== 'manager') return;
+        
+        if (!isSilent) setIsSendingReminders(true);
+        try {
+            // Find all unique consultants for active projects
+            const activeProjects = projectsList.filter(p => p.status === 'under_construction' || p.status === 'pending_approval');
+            const uniqueConsultantIds = Array.from(new Set(activeProjects.map(p => p.consultant_id)));
+            
+            if (uniqueConsultantIds.length === 0) {
+                if (!isSilent) alert('لا توجد مشاريع نشطة حالياً لإرسال تنبيهات لها.');
+                return;
+            }
+
+            // Fetch consultant emails
+            const { data: consultants } = await supabase
+                .from('app_users')
+                .select('email, name')
+                .in('id', uniqueConsultantIds);
+
+            if (consultants && consultants.length > 0) {
+                let successCount = 0;
+                for (const consultant of consultants) {
+                    const success = await sendEmailNotification('WEEKLY_REMINDER', {
+                        email: consultant.email,
+                        name: consultant.name,
+                        message: "يرجى العلم بضرورة الإسراع في تنفيذ المخططات الهندسية وتسليمها في الوقت المحدد لضمان سير المشروع بسلاسة."
+                    });
+                    if (success) successCount++;
+                }
+                if (!isSilent) alert(`تم إرسال ${successCount} تنبيهات بنجاح إلى المكاتب الاستشارية.`);
+            }
+        } catch (err) {
+            console.error("Reminder Error:", err);
+            if (!isSilent) alert('حدث خطأ أثناء إرسال التنبيهات.');
+        } finally {
+            if (!isSilent) setIsSendingReminders(false);
+        }
+    };
+
+    useEffect(() => { 
+        loadDashboardData(); 
+    }, [loadDashboardData]);
+
+    useEffect(() => {
+        if (!isLoading && projectsList.length > 0) {
+            checkAndTriggerAutoReminders();
+        }
+    }, [isLoading, projectsList, checkAndTriggerAutoReminders]);
 
     const regionData = useMemo(() => {
         const counts: Record<string, number> = {};
@@ -118,9 +206,26 @@ export const Dashboard = () => {
     return (
         <div className="space-y-8 pb-10" dir="rtl">
             {/* Page Title */}
-            <div>
-                <h2 className="text-2xl font-black text-slate-800 font-sans">لوحة التحكم</h2>
-                <p className="text-slate-400 text-sm font-medium mt-1">نظرة عامة على طلبات بناء المساجد الجديدة</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-800 font-sans">لوحة التحكم</h2>
+                    <p className="text-slate-400 text-sm font-medium mt-1">نظرة عامة على طلبات بناء المساجد الجديدة</p>
+                </div>
+                
+                {user?.role === 'manager' && (
+                    <button 
+                        onClick={handleSendReminders}
+                        disabled={isSendingReminders}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                    >
+                        {isSendingReminders ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <Bell className="w-4 h-4" />
+                        )}
+                        <span>إرسال تذكير أسبوعي للمكاتب</span>
+                    </button>
+                )}
             </div>
 
             {/* KPI Cards */}

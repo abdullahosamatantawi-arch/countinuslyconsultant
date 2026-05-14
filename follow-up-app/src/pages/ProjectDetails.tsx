@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, Building2, User, CheckCircle2, Circle, Clock, AlertTriangle, AlertCircle, X, FileText, Upload, Check, Eye, Layers, Sparkles, ShieldCheck, TriangleAlert, Loader2, Trash2, XCircle } from 'lucide-react';
+import { ArrowRight, MapPin, Building2, User, CheckCircle2, Circle, Clock, AlertTriangle, AlertCircle, X, FileText, Upload, UploadCloud, Check, Eye, Layers, Sparkles, ShieldCheck, TriangleAlert, Loader2, Trash2, XCircle } from 'lucide-react';
 import type { ProjectStage, Project } from '../types';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,6 +33,7 @@ const StageItem = ({
     onUploadDrawing,
     onUploadSignature,
     onRequestModifications,
+    onVerifyAI,
     isAdmin,
     isConsultant,
     isEngineer,
@@ -44,6 +45,7 @@ const StageItem = ({
     onUploadDrawing: () => void,
     onUploadSignature: () => void,
     onRequestModifications: () => void,
+    onVerifyAI: () => void,
     isAdmin: boolean,
     isConsultant: boolean,
     isEngineer: boolean,
@@ -63,15 +65,15 @@ const StageItem = ({
     const icons = { completed: CheckCircle2, current: Clock, awaiting_approval: Eye, pending: Circle, rejected: AlertCircle };
     const Icon = icons[stage.status as keyof typeof icons] || Clock;
     const isActionableStage = true;
-    const isArchitecturalStage = stage.name === 'اعتماد معماري';
+    const isArchitecturalStage = stage.stageType === 'architectural';
 
     return (
         <div className={cn(
             "group relative rounded-2xl border transition-all duration-300 overflow-hidden",
             stage.status === 'completed' ? "bg-white border-emerald-100 hover:border-emerald-200" :
-            stage.status === 'awaiting_approval' ? "bg-white border-blue-200 hover:border-blue-300 shadow-md shadow-blue-500/5" :
-            stage.status === 'rejected' ? "bg-white border-red-200 hover:border-red-300" :
-            "bg-white/60 border-slate-100 hover:border-slate-200"
+                stage.status === 'awaiting_approval' ? "bg-white border-blue-200 hover:border-blue-300 shadow-md shadow-blue-500/5" :
+                    stage.status === 'rejected' ? "bg-white border-red-200 hover:border-red-300" :
+                        "bg-white/60 border-slate-100 hover:border-slate-200"
         )}>
             <div className="p-5">
                 <div className="flex items-start gap-4">
@@ -123,12 +125,17 @@ const StageItem = ({
                             <div className="flex flex-wrap gap-1.5 mt-2.5">
                                 {stage.drawingUrl && (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 text-[10px] font-medium border border-slate-100">
-                                        <FileText className="w-3 h-3" /> المخطط مرفوع
+                                        <FileText className="w-3 h-3" /> المخطط مرفوع (PDF)
+                                    </span>
+                                )}
+                                {stage.dwgUrl && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-medium border border-blue-100">
+                                        <UploadCloud className="w-3 h-3" /> أوتوكاد مرفوع
                                     </span>
                                 )}
                                 {stage.signatureUrl && (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-medium border border-emerald-100">
-                                        <Check className="w-3 h-3" /> معتمد
+                                        <Check className="w-3 h-3" /> معتمد وموقع
                                     </span>
                                 )}
                             </div>
@@ -143,42 +150,47 @@ const StageItem = ({
                 (isArchitecturalStage && (isAdmin || isEngineer)) ||
                 (stage.status === 'awaiting_approval' && (isAdmin || isEngineer))
             ) && (
-                <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3 flex flex-wrap gap-2">
-                    {/* Consultant upload */}
-                    {(stage.status === 'current' || stage.status === 'pending' || stage.status === 'rejected') && isConsultant && (
-                        <button onClick={onUploadDrawing} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-sm">
-                            <Upload className="w-3.5 h-3.5" />
-                            {stage.status === 'rejected' ? 'إعادة رفع المخطط' : 'رفع المخطط'}
-                        </button>
-                    )}
+                    <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3 flex flex-wrap gap-2">
+                        {/* Consultant upload */}
+                        {(stage.status === 'current' || stage.status === 'pending' || stage.status === 'rejected') && isConsultant && (
+                            <button onClick={onUploadDrawing} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-sm">
+                                <Upload className="w-3.5 h-3.5" />
+                                {stage.status === 'rejected' ? 'إعادة رفع المخطط' : 'رفع المخطط'}
+                            </button>
+                        )}
 
-                    {/* Blueprint Comparison */}
-                    {isArchitecturalStage && (isAdmin || isEngineer) && (
-                        <Link to={`/approvals/${projectId}/compare`} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm">
-                            <Layers className="w-3.5 h-3.5" /> مقارنة المخططات
-                        </Link>
-                    )}
+                        {/* Blueprint Comparison */}
+                        {isArchitecturalStage && (isAdmin || isEngineer) && (
+                            <Link to={`/approvals/${projectId}/compare`} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm">
+                                <Layers className="w-3.5 h-3.5" /> مقارنة المخططات
+                            </Link>
+                        )}
 
-                    {/* Approval actions */}
-                    {stage.status === 'awaiting_approval' && (isAdmin || isEngineer) && (
-                        <>
-                            <a href={stage.drawingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-100 transition-all border border-slate-200 shadow-sm">
-                                <Eye className="w-3.5 h-3.5" /> معاينة
-                            </a>
-                            {isActionableStage && (
-                                <>
-                                    <button onClick={onUploadSignature} className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-600/20">
-                                        <Check className="w-4 h-4" /> اعتماد المخطط
-                                    </button>
-                                    <button onClick={onRequestModifications} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-all border border-red-200 shadow-sm">
-                                        <X className="w-3.5 h-3.5" /> طلب تعديلات
-                                    </button>
-                                </>
-                            )}
-                        </>
-                    )}
-                </div>
-            )}
+                        {/* Approval actions */}
+                        {stage.status === 'awaiting_approval' && (isAdmin || isEngineer) && (
+                            <>
+                                <a href={stage.drawingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-100 transition-all border border-slate-200 shadow-sm">
+                                    <Eye className="w-3.5 h-3.5" /> معاينة
+                                </a>
+                                {isActionableStage && (
+                                    <>
+                                        {isAdmin && stage.originalDrawingUrl && (
+                                            <button onClick={onVerifyAI} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-black hover:bg-indigo-100 transition-all border border-indigo-200 shadow-sm">
+                                                <Sparkles className="w-3.5 h-3.5" /> تحقق AI من التعديلات
+                                            </button>
+                                        )}
+                                        <button onClick={onUploadSignature} className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-black hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-600/20">
+                                            <Check className="w-4 h-4" /> اعتماد وتوقيع المخطط
+                                        </button>
+                                        <button onClick={onRequestModifications} className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-all border border-red-200 shadow-sm">
+                                            <X className="w-3.5 h-3.5" /> طلب تعديلات
+                                        </button>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
         </div>
     );
 };
@@ -226,6 +238,7 @@ export const ProjectDetails = () => {
                     description: s.description,
                     date: s.date,
                     drawingUrl: s.drawing_url,
+                    dwgUrl: s.dwg_url,
                     signatureUrl: s.signature_url,
                     originalDrawingUrl: s.original_drawing_url,
                     stageType: s.stage_type
@@ -246,14 +259,14 @@ export const ProjectDetails = () => {
     useEffect(() => {
         if (!isLoading && project && id) {
             const requiredStages = [
-                { name: 'اعتماد معماري', type: 'architectural' },
-                { name: 'اعتماد إنشائي', type: 'structural' },
-                { name: 'اعتماد كهروميكانيكي', type: 'mep' },
-                { name: 'اعتماد الدفاع المدني', type: 'civil_defense' },
-                { name: 'تخطيط ومساحة', type: 'planning' },
-                { name: 'ضمان الاصباغ الداخلية والخارجية', type: 'paint' },
-                { name: 'ضمان التكييف', type: 'ac' },
-                { name: 'ضمان العزل', type: 'insulation' }
+                { name: 'المخطط المعماري', type: 'architectural' },
+                { name: 'المخطط الانشائي', type: 'structural' },
+                { name: 'مخطط صحي', type: 'sanitary' },
+                { name: 'مخطط كهرباء', type: 'electrical' },
+                { name: 'مخطط المياة', type: 'water' },
+                { name: 'مخطط الغاز', type: 'gas' },
+                { name: 'مخطط الدفاع المدني', type: 'civil_defense' },
+                { name: 'مخطط اتصالات', type: 'telecom' }
             ];
 
             const missingStages = requiredStages.filter(rs => !stages.find(s => s.stageType === rs.type));
@@ -302,6 +315,7 @@ export const ProjectDetails = () => {
                 status: s.status,
                 description: s.description,
                 drawing_url: s.drawingUrl,
+                dwg_url: s.dwgUrl,
                 signature_url: s.signatureUrl,
                 original_drawing_url: s.originalDrawingUrl,
                 stage_order: index
@@ -340,7 +354,11 @@ export const ProjectDetails = () => {
         }
     };
 
-    const drawingInputRef = useRef<HTMLInputElement>(null);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [uploadPdf, setUploadPdf] = useState<File | null>(null);
+    const [uploadDwg, setUploadDwg] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     const signatureInputRef = useRef<HTMLInputElement>(null);
     const [activeStageId, setActiveStageId] = useState<string | null>(null);
 
@@ -353,7 +371,6 @@ export const ProjectDetails = () => {
     const [aiPhase, setAiPhase] = useState<'analyzing' | 'results' | 'error'>('analyzing');
     const [aiProgress, setAiProgress] = useState(0);
     const [aiResults, setAiResults] = useState<{ requestedChanges: string; checks: { text: string; passed: boolean; confidence: number }[]; overallScore: number } | null>(null);
-    const [pendingUploadData, setPendingUploadData] = useState<{ publicUrl: string; stageId: string; newStages: any[] } | null>(null);
 
     const runRealAIVerification = async (requestedComments: string, originalUrl: string, modifiedUrl: string, callback: () => void) => {
         setAiVerifyModal(true);
@@ -361,37 +378,83 @@ export const ProjectDetails = () => {
         setAiProgress(0);
         setAiResults(null);
 
-        // Use local proxy path to avoid CORS issues on localhost
-        const proxyPath = '/n8n-webhook';
+        const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
         try {
-            // Simulated progress while waiting for real API
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                const inc = Math.max(0.5, (92 - progress) / 8);
-                progress += inc;
-                setAiProgress(Math.round(progress));
-            }, 1000);
+            if (!apiKey) throw new Error("Anthropic API Key missing");
+            if (!originalUrl || !modifiedUrl) throw new Error("Drawing URLs are missing");
 
-            const response = await fetch(proxyPath, {
+            // 1. Fetch images and convert to B64
+            setAiProgress(20);
+            const getB64 = async (url: string) => {
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`Failed to fetch file: ${res.statusText}`);
+                    const blob = await res.blob();
+                    const reader = new FileReader();
+                    return new Promise<string>((resolve, reject) => {
+                        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                        reader.onerror = () => reject(new Error("Failed to read file"));
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e: any) {
+                    throw new Error(`Error loading drawing: ${e.message}`);
+                }
+            };
+
+            const [origB64, modB64] = await Promise.all([
+                getB64(originalUrl),
+                getB64(modifiedUrl)
+            ]);
+
+            setAiProgress(50);
+
+            // 2. Call Anthropic
+            const response = await fetch('/anthropic-api/v1/messages', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-beta': 'pdfs-2024-09-25',
+                    'anthropic-dangerous-direct-browser-access': 'true',
+                },
                 body: JSON.stringify({
-                    original_drawing_url: originalUrl,
-                    modified_drawing_url: modifiedUrl,
-                    rejection_comments: requestedComments,
-                    project_id: id,
-                    engineer_name: 'عبدالله الياسي',
-                    context: 'إعادة رفع بعد الرفض'
+                    model: 'claude-sonnet-4-5',
+                    max_tokens: 1024,
+                    system: `أنت مهندس معماري خبير. قارن بين المخطط الأصلي والمعدل بناءً على ملاحظات المهندس: "${requestedComments}".
+                             تأكد من تنفيذ التعديلات المطلوبة بدقة.
+                             أعد JSON فقط بهذا التنسيق:
+                             {
+                               "score": 0-100,
+                               "checks": [
+                                 { "text": "وصف التحقق", "passed": boolean, "confidence": 0-100 }
+                               ]
+                             }`,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: 'المخطط الأصلي:' },
+                                { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: origB64 } },
+                                { type: 'text', text: 'المخطط المعدل:' },
+                                { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: modB64 } },
+                                { type: 'text', text: 'هل تم تنفيذ التعديلات المطلوبة؟' }
+                            ]
+                        }
+                    ]
                 })
             });
 
-            clearInterval(progressInterval);
-
-            if (!response.ok) throw new Error('Failed to reach AI Engine');
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || 'API Error');
+            }
 
             const result = await response.json();
-            const data = Array.isArray(result) ? result[0] : result;
+            const content = result.content[0].text;
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            const data = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
             setAiProgress(100);
             setTimeout(() => {
@@ -403,71 +466,12 @@ export const ProjectDetails = () => {
                 });
             }, 500);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("AI Verify Error:", error);
             setAiPhase('error');
         }
 
-        // Store callback for when user confirms
         (window as any).__aiVerifyCallback = callback;
-    };
-
-    const runSimulationFallback = () => {
-        setAiPhase('analyzing');
-        setAiProgress(0);
-        
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 15;
-            setAiProgress(Math.min(100, progress));
-            if (progress >= 100) {
-                clearInterval(interval);
-                setTimeout(() => {
-                    setAiPhase('results');
-                    setAiResults({
-                        requestedChanges: 'محاكاة: تعديل الواجهات المعمارية',
-                        checks: [
-                            { text: 'مطابقة الواجهات والمقاسات المعمارية', passed: true, confidence: 95 },
-                            { text: 'التعديلات المطلوبة من المهندس', passed: true, confidence: 92 },
-                            { text: 'معايير إدارة بناء ورعاية المساجد', passed: true, confidence: 94 }
-                        ],
-                        overallScore: 94
-                    });
-                }, 500);
-            }
-        }, 400);
-    };
-
-    const handleAIApproveAndProceed = async () => {
-        setAiVerifyModal(false);
-        if (pendingUploadData) {
-            setStages(pendingUploadData.newStages);
-            await persistCloudSync(pendingUploadData.newStages);
-
-            addNotification({
-                projectId: project!.id,
-                projectName: project!.mosque_name || project!.region,
-                message: `قام الاستشاري بإعادة رفع مخطط معدل - تم التحقق بواسطة AI ✓`,
-                recipientId: 'admin_1'
-            });
-
-            // Send Real-time Webhook Notification via Vite Proxy
-            console.log("Notifying n8n about modified drawing upload...");
-            fetch('/n8n-webhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'modified_drawing_upload',
-                    project_name: project!.mosque_name,
-                    engineer_name: 'عبدالله الياسي',
-                    drawing_url: pendingUploadData.publicUrl,
-                    message: `تم رفع تعديلات المخطط المعماري بعد التحقق بالذكاء الاصطناعي بنسبة ${aiResults?.overallScore}%`
-                })
-            }).catch(e => console.error("Webhook notification error:", e));
-
-            alert('تم التحقق والرفع بنجاح ✓');
-            setPendingUploadData(null);
-        }
     };
 
     if (isLoading) return (
@@ -499,68 +503,49 @@ export const ProjectDetails = () => {
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    const handleDrawingUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file && activeStageId) {
+    const handleUploadSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if ((uploadPdf || uploadDwg) && activeStageId) {
+            setIsUploading(true);
             try {
-                const publicUrl = await uploadFile(file, `drawings/${id}`);
-                const currentStage = stages.find(s => s.id === activeStageId);
-                const isReuploadAfterRejection = currentStage?.status === 'rejected';
-                const rejectionComments = currentStage?.description || '';
+                let publicUrl = '';
+                let dwgPublicUrl = '';
 
-                const newStages = stages.map(s =>
-                    s.id === activeStageId
-                        ? {
-                            ...s,
-                            drawingUrl: publicUrl,
-                            status: 'awaiting_approval' as const,
-                            description: isReuploadAfterRejection ? 'تم إعادة الرفع بعد التعديل - تحقق AI ✓' : s.description
-                        }
-                        : s
-                );
-
-                if (isReuploadAfterRejection) {
-                    addNotification({
-                        projectId: project!.id,
-                        projectName: project!.mosque_name || project!.region,
-                        message: `قام الاستشاري بإعادة رفع مخطط معدل لمرحلة ${currentStage?.name}`,
-                        recipientId: 'admin_1'
-                    });
-
-                    // Only Architectural triggers AI Webhook
-                    if (rejectionComments.includes('طلب تعديل') && currentStage?.name === 'اعتماد معماري') {
-                        setPendingUploadData({ publicUrl, stageId: activeStageId, newStages });
-                        runRealAIVerification(rejectionComments, currentStage?.originalDrawingUrl || '', publicUrl, () => {});
-                        return;
-                    }
-
-                    // Otherwise, just notify n8n for regular modified stages
-                    fetch('/n8n-webhook', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'modified_drawing_upload',
-                            project_name: project!.mosque_name,
-                            stage_name: currentStage?.name,
-                            drawing_url: publicUrl,
-                            message: `تم رفع تعديلات المخطط لمرحلة ${currentStage?.name}`
-                        })
-                    }).catch(e => console.error("Webhook notification error:", e));
+                // Upload PDF if exists
+                if (uploadPdf) {
+                    publicUrl = await uploadFile(uploadPdf, `drawings/${id}`);
                 }
+
+                // Upload DWG if exists
+                if (uploadDwg) {
+                    const dwgExt = uploadDwg.name.split('.').pop();
+                    const dwgFileName = `${id}/${activeStageId}_dwg_${Date.now()}.${dwgExt}`;
+                    const { error: dwgUploadError } = await supabase.storage.from('schematics').upload(dwgFileName, uploadDwg);
+                    if (dwgUploadError) throw new Error("خطأ في رفع ملف الـ AutoCAD.");
+                    const { data } = supabase.storage.from('schematics').getPublicUrl(dwgFileName);
+                    dwgPublicUrl = data.publicUrl;
+                }
+
+                const newStages = stages.map(s => s.id === activeStageId ? {
+                    ...s,
+                    status: 'awaiting_approval',
+                    drawingUrl: publicUrl || s.drawingUrl,
+                    dwgUrl: dwgPublicUrl || s.dwgUrl
+                } : s);
 
                 // Persist changes
                 setStages(newStages);
                 await persistCloudSync(newStages);
 
                 // Save initial drawing as Version A for future comparison (Only for Architectural)
-                const stgName = currentStage?.name || '';
-                if (stgName === 'اعتماد معماري') {
+                const currentStage = newStages.find(s => s.id === activeStageId);
+                const stgType = currentStage?.stageType || '';
+                if (stgType === 'architectural') {
                     const currentOriginal = currentStage?.originalDrawingUrl;
-                    if (!currentOriginal) {
-                        // Capture it in state and DB
-                        const updatedStages = newStages.map(s => 
-                            s.id === activeStageId 
-                                ? { ...s, originalDrawingUrl: publicUrl } 
+                    if (!currentOriginal && publicUrl) {
+                        const updatedStages = newStages.map(s =>
+                            s.id === activeStageId
+                                ? { ...s, originalDrawingUrl: publicUrl }
                                 : s
                         );
                         setStages(updatedStages);
@@ -595,12 +580,15 @@ export const ProjectDetails = () => {
                     });
                 });
 
-                // Removed proactive emails to engineers during drawing uploads per user request
-                
+                setIsUploadModalOpen(false);
+                setUploadPdf(null);
+                setUploadDwg(null);
                 alert('تم الرفع والمزامنة بنجاح');
             } catch (err: any) {
                 console.error('Upload Error:', err);
-                alert(`خطأ في رفع الملف: ${err.message || 'يرجى التأكد من إنشاء مجلد mosque-docs في Supabase'}`);
+                alert(`خطأ في رفع الملف: ${err.message || 'يرجى التأكد من مساحة التخزين.'}`);
+            } finally {
+                setIsUploading(false);
             }
         }
     };
@@ -615,7 +603,6 @@ export const ProjectDetails = () => {
 
                 const newStages = [...stages];
                 newStages[stageIndex] = { ...newStages[stageIndex], signatureUrl: publicUrl, status: 'completed', date: new Date().toLocaleDateString('ar-EG') };
-                // Removed sequential stage lock - next stage no longer forced to "current"
 
                 setStages(newStages);
                 await persistCloudSync(newStages);
@@ -637,7 +624,6 @@ export const ProjectDetails = () => {
                     consultantEmail = mockConsultant.email;
                     consultantName = mockConsultant.name;
                 } else {
-                    // Fetch from DB if not in mock
                     const { data: dbConsultant } = await supabase
                         .from('app_users')
                         .select('email, name')
@@ -677,10 +663,10 @@ export const ProjectDetails = () => {
 
         const newStages = [...stages];
         const currentDrawingUrl = newStages[stageIndex].drawingUrl;
-        newStages[stageIndex] = { 
-            ...newStages[stageIndex], 
-            status: 'rejected', 
-            description: `طلب تعديل: ${modDetails.comments}`, 
+        newStages[stageIndex] = {
+            ...newStages[stageIndex],
+            status: 'rejected',
+            description: `طلب تعديل: ${modDetails.comments}`,
             drawingUrl: undefined,
             originalDrawingUrl: currentDrawingUrl // Preserve original for comparison
         };
@@ -695,49 +681,18 @@ export const ProjectDetails = () => {
             recipientId: project.consultant_id
         });
 
-        // Send Email to Consultant
-        let consultantEmail = '';
-        let consultantName = '';
-
-        console.log('Searching for consultant ID:', project.consultant_id);
-
         const mockConsultant = MOCK_USERS.find(u => u.id === project.consultant_id);
-        if (mockConsultant) {
-            console.log('Found in MOCK_USERS:', mockConsultant.email);
-            consultantEmail = mockConsultant.email;
-            consultantName = mockConsultant.name;
-        } else {
-            console.log('Not found in MOCK_USERS, searching in app_users table...');
-            // Fetch from DB if not in mock
-            const { data: dbConsultant, error: dbError } = await supabase
-                .from('app_users')
-                .select('email, name')
-                .eq('id', project.consultant_id)
-                .single();
-            
-            if (dbError) {
-                console.error('Database lookup failed for consultant:', dbError);
-            }
+        const { data: dbConsultant } = await supabase.from('app_users').select('email, name').eq('id', project.consultant_id).single();
+        const consultant = mockConsultant || dbConsultant;
 
-            if (dbConsultant) {
-                console.log('Found in app_users table:', dbConsultant.email);
-                consultantEmail = dbConsultant.email;
-                consultantName = dbConsultant.name;
-            } else {
-                console.warn('Consultant not found in database or mock data.');
-            }
-        }
-
-        if (consultantEmail) {
+        if (consultant) {
             await sendEmailNotification('MODIFICATION_REQUEST', {
-                email: consultantEmail,
-                name: consultantName,
+                email: consultant.email,
+                name: consultant.name,
                 projectName: project.mosque_name || '',
                 stageName: newStages[stageIndex].name,
                 message: modDetails.comments
             });
-        } else {
-            alert('لم يتم العثور على البريد الإلكتروني للاستشاري، لن يتم إرسال إيميل.');
         }
 
         setIsModModalOpen(false);
@@ -745,9 +700,6 @@ export const ProjectDetails = () => {
         alert('تم إرسال طلب التعديلات بنجاح');
     };
 
-
-
-    // Delete project from Supabase
     const handleDeleteProject = async () => {
         if (!project) return;
         const projectName = project.mosque_name || project.region || 'هذا المشروع';
@@ -755,16 +707,9 @@ export const ProjectDetails = () => {
 
         setIsDeleting(true);
         try {
-            // 1. Delete stages
             await supabase.from('project_stages').delete().eq('project_id', id);
-            
-            // 2. Delete the project
-            const { error } = await supabase.from('projects').delete().eq('id', id);
-            if (error) throw error;
-
-            // 3. Clean up localStorage comparison data
+            await supabase.from('projects').delete().eq('id', id);
             localStorage.removeItem(`blueprint_compare_${id}`);
-
             alert('تم حذف المشروع بنجاح');
             navigate(basePath);
         } catch (err: any) {
@@ -777,21 +722,16 @@ export const ProjectDetails = () => {
 
     return (
         <div className="space-y-8">
-            {/* Back Button */}
             <Link to={basePath} className="inline-flex items-center gap-2 text-slate-500 hover:text-brand-emerald text-sm font-medium transition-colors group">
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 العودة لسجل المشاريع
             </Link>
 
-            {/* ═══════════ HERO HEADER ═══════════ */}
             <div className="relative bg-gradient-to-l from-[#0c3b2e] to-[#164e3f] rounded-3xl p-8 overflow-hidden text-white">
-                {/* Decorative elements */}
                 <div className="absolute top-0 left-0 w-64 h-64 bg-white/[0.03] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
                 <div className="absolute bottom-0 right-0 w-40 h-40 bg-white/[0.03] rounded-full translate-x-1/3 translate-y-1/3"></div>
-                <div className="absolute top-4 left-4 islamic-pattern opacity-[0.04] w-40 h-40 pointer-events-none"></div>
-
+                
                 <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-8">
-                    {/* Left: Project Info */}
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-4">
                             <h1 className="text-3xl font-bold tracking-tight">{project?.mosque_name || project?.region || 'مشروع جديد'}</h1>
@@ -826,16 +766,8 @@ export const ProjectDetails = () => {
                                 </div>
                             ))}
                         </div>
-
-                        {project.supervising_engineer && (
-                            <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-emerald-400/20">
-                                <User className="w-3.5 h-3.5 text-emerald-300" />
-                                <span className="text-xs font-bold text-emerald-200">المهندس المشرف: {project.supervising_engineer}</span>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Right: Progress Ring */}
                     <div className="flex items-center justify-center lg:justify-end">
                         <div className="relative w-36 h-36">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
@@ -860,7 +792,6 @@ export const ProjectDetails = () => {
                 </div>
             </div>
 
-            {/* ═══════════ SUMMARY STATS ═══════════ */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {(() => {
                     const completed = stages.filter(s => s.status === 'completed').length;
@@ -887,9 +818,7 @@ export const ProjectDetails = () => {
                 })}
             </div>
 
-            {/* ═══════════ MAIN CONTENT ═══════════ */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Workflow */}
                 <div className="lg:col-span-2">
                     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                         <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -897,7 +826,6 @@ export const ProjectDetails = () => {
                                 <h2 className="text-lg font-bold text-slate-800">سير المراحل الهندسية</h2>
                                 <p className="text-xs text-slate-400 mt-0.5">{stages.filter(s => s.status === 'completed').length} من {stages.length} مراحل مكتملة</p>
                             </div>
-                            {/* Progress bar */}
                             <div className="flex items-center gap-3">
                                 <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${(stages.filter(s => s.status === 'completed').length / (stages.length || 1)) * 100}%` }}></div>
@@ -910,9 +838,13 @@ export const ProjectDetails = () => {
                                 <StageItem
                                     key={stage.id}
                                     stage={stage}
-                                    onUploadDrawing={() => { setActiveStageId(stage.id); drawingInputRef.current?.click(); }}
+                                    onUploadDrawing={() => { setActiveStageId(stage.id); setIsUploadModalOpen(true); }}
                                     onUploadSignature={() => { setActiveStageId(stage.id); signatureInputRef.current?.click(); }}
                                     onRequestModifications={() => { setCurrentModStage(stage.id); setIsModModalOpen(true); }}
+                                    onVerifyAI={() => {
+                                        const comments = stage.description || '';
+                                        runRealAIVerification(comments, stage.originalDrawingUrl || '', stage.drawingUrl || '', () => { });
+                                    }}
                                     isAdmin={isAdmin}
                                     isConsultant={user?.role === 'consultant'}
                                     isEngineer={isEngineer}
@@ -958,8 +890,79 @@ export const ProjectDetails = () => {
                 </div>
             </div>
 
-            <input type="file" ref={drawingInputRef} onChange={handleDrawingUpload} className="hidden" accept=".pdf" />
             <input type="file" ref={signatureInputRef} onChange={handleSignatureUpload} className="hidden" accept=".pdf" />
+
+            {/* Consultant Upload Modal */}
+            {isUploadModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+                            <h2 className="text-xl font-black text-slate-800">رفع ملفات المخطط</h2>
+                            <button onClick={() => { setIsUploadModalOpen(false); setUploadPdf(null); setUploadDwg(null); }} className="p-2 hover:bg-white rounded-full transition-colors"><X className="w-5 h-5 text-slate-500" /></button>
+                        </div>
+                        <form onSubmit={handleUploadSubmit} className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                {/* PDF Upload Area */}
+                                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-emerald-400 hover:bg-emerald-50/30 transition-all group">
+                                    <input type="file" id="modal-pdf" className="hidden" accept=".pdf" onChange={(e) => setUploadPdf(e.target.files?.[0] || null)} />
+                                    {!uploadPdf ? (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 group-hover:text-emerald-500 group-hover:scale-110 transition-all">
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-700 text-sm">مخطط PDF</p>
+                                                <p className="text-[10px] text-slate-400 mt-1">يجب أن يكون بصيغة PDF</p>
+                                            </div>
+                                            <label htmlFor="modal-pdf" className="cursor-pointer px-4 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-emerald-600 hover:border-emerald-200 mt-2">اختر ملف</label>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center">
+                                                <CheckCircle2 className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{uploadPdf.name}</p>
+                                            <button type="button" onClick={() => setUploadPdf(null)} className="text-[10px] text-red-500 hover:underline">إزالة</button>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* AutoCAD Upload Area */}
+                                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/30 transition-all group">
+                                    <input type="file" id="modal-dwg" className="hidden" accept=".dwg,.dxf" onChange={(e) => setUploadDwg(e.target.files?.[0] || null)} />
+                                    {!uploadDwg ? (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
+                                                <UploadCloud className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-700 text-sm">مخطط AutoCAD</p>
+                                                <p className="text-[10px] text-slate-400 mt-1">يجب أن يكون بصيغة DWG أو DXF</p>
+                                            </div>
+                                            <label htmlFor="modal-dwg" className="cursor-pointer px-4 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-blue-600 hover:border-blue-200 mt-2">اختر ملف</label>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
+                                                <CheckCircle2 className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{uploadDwg.name}</p>
+                                            <button type="button" onClick={() => setUploadDwg(null)} className="text-[10px] text-red-500 hover:underline">إزالة</button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button type="submit" disabled={(!uploadPdf && !uploadDwg) || isUploading} className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all disabled:opacity-50 flex justify-center items-center gap-2">
+                                    {isUploading ? <><Loader2 className="w-4 h-4 animate-spin" /> جاري الرفع...</> : 'اعتماد ورفع الملفات'}
+                                </button>
+                                <button type="button" onClick={() => { setIsUploadModalOpen(false); setUploadPdf(null); setUploadDwg(null); }} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all disabled:opacity-50">
+                                    إلغاء
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {isModModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -1034,35 +1037,20 @@ export const ProjectDetails = () => {
                                         <XCircle className="w-10 h-10 text-red-500" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-800">فشل في الاتصال بمحرك AI</h3>
-                                        <p className="text-slate-400 text-xs mt-1 font-bold leading-relaxed">لم نتمكن من الوصول لسير العمل في n8n. يرجى التأكد من أن الرابط يعمل بشكل صحيح.</p>
+                                        <h3 className="text-lg font-black text-slate-800">فشل في التحقق الذكي</h3>
+                                        <p className="text-slate-400 text-xs mt-1 font-bold leading-relaxed">
+                                            {(window as any).__aiError || "حدث خطأ أثناء الاتصال بمحرك الذكاء الاصطناعي. يرجى التحقق من الاتصال بالإنترنت."}
+                                        </p>
                                     </div>
                                     <div className="flex flex-col gap-3 w-full">
                                         <div className="flex gap-3 justify-center">
-                                            <button 
+                                            <button
                                                 onClick={() => setAiVerifyModal(false)}
-                                                className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm"
+                                                className="w-full py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm"
                                             >
-                                                إلغاء
-                                            </button>
-                                            <button 
-                                                onClick={() => {
-                                                    if (pendingUploadData) {
-                                                        const currentStage = stages.find(s => s.id === activeStageId);
-                                                        runRealAIVerification(currentStage?.description || '', currentStage?.originalDrawingUrl || '', pendingUploadData.publicUrl, () => {});
-                                                    }
-                                                }}
-                                                className="px-6 py-2.5 bg-brand-emerald text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20"
-                                            >
-                                                إعادة المحاولة
+                                                إغلاق
                                             </button>
                                         </div>
-                                        <button 
-                                            onClick={runSimulationFallback}
-                                            className="w-full py-3 text-[11px] text-slate-400 font-bold hover:text-brand-emerald hover:bg-slate-50 rounded-xl transition-all border border-dashed border-slate-200 mt-2"
-                                        >
-                                            تشغيل محاكاة للعرض (Demo Only)
-                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -1141,18 +1129,11 @@ export const ProjectDetails = () => {
                                     {/* Actions */}
                                     <div className="flex gap-3 pt-2">
                                         <button
-                                            onClick={handleAIApproveAndProceed}
+                                            onClick={() => setAiVerifyModal(false)}
                                             className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
                                         >
-                                            <ShieldCheck className="w-5 h-5" />
-                                            <span>قبول ومتابعة الرفع</span>
-                                        </button>
-                                        <button
-                                            onClick={() => { setAiVerifyModal(false); setPendingUploadData(null); }}
-                                            className="flex-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <X className="w-4 h-4" />
-                                            <span>إلغاء</span>
+                                            <Check className="w-5 h-5" />
+                                            <span>تمت المراجعة</span>
                                         </button>
                                     </div>
                                 </div>

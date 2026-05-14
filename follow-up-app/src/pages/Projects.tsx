@@ -199,18 +199,14 @@ export const Projects = () => {
 
             // Initialize new 9 stages for the project
             const newStagesList = [
-                { name: 'اعتماد الدفاع المدني', description: 'يرجى رفع مخطط الدفاع المدني', type: 'civil_defense' },
-                { name: 'اعتماد المياة', description: 'يرجى رفع مخطط المياة', type: 'mep' },
-                { name: 'اعتماد الغاز', description: 'يرجى رفع مخطط الغاز', type: 'mep' },
-                { name: 'اعتماد صحي', description: 'يرجى رفع المخطط الصحي', type: 'mep' },
-                { name: 'اعتماد كهرباء', description: 'يرجى رفع المخطط الكهربائي', type: 'mep' },
-                { name: 'اعتماد إنشائي', description: 'يرجى رفع المخطط الإنشائي', type: 'structural' },
-                { name: 'اعتماد معماري', description: 'يرجى رفع المخطط المعماري', type: 'architectural' },
-                { name: 'اعتماد اتصالات', description: 'يرجى رفع مخطط الاتصالات', type: 'mep' },
-                { name: 'اعتماد تخطيط ومساحة', description: 'يرجى رفع مخطط التخطيط والمساحة', type: 'planning' },
-                { name: 'ضمان الاصباغ الداخلية والخارجية', description: 'يرجى رفع ضمان الاصباغ', type: 'paint' },
-                { name: 'ضمان التكييف', description: 'يرجى رفع ضمان التكييف', type: 'ac' },
-                { name: 'ضمان العزل', description: 'يرجى رفع ضمان العزل', type: 'insulation' },
+                { name: 'المخطط المعماري', description: 'يرجى رفع المخطط المعماري', type: 'architectural' },
+                { name: 'المخطط الانشائي', description: 'يرجى رفع المخطط الإنشائي', type: 'structural' },
+                { name: 'مخطط صحي', description: 'يرجى رفع المخطط الصحي', type: 'sanitary' },
+                { name: 'مخطط كهرباء', description: 'يرجى رفع المخطط الكهربائي', type: 'electrical' },
+                { name: 'مخطط المياة', description: 'يرجى رفع مخطط المياة', type: 'water' },
+                { name: 'مخطط الغاز', description: 'يرجى رفع مخطط الغاز', type: 'gas' },
+                { name: 'مخطط الدفاع المدني', description: 'يرجى رفع مخطط الدفاع المدني', type: 'civil_defense' },
+                { name: 'مخطط اتصالات', description: 'يرجى رفع مخطط الاتصالات', type: 'telecom' }
             ];
 
             const stagesData = newStagesList.map((s, index) => ({

@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -7,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [react(), tailwindcss()],
+    test: { globals: true, environment: "jsdom", setupFiles: ["./src/test/setup.ts"] },
     server: {
       port: 3002,
       proxy: {
@@ -26,6 +28,18 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_N8N_EXTRACT_WEBHOOK,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/n8n-extract-license/, ''),
+          secure: false,
+        },
+        '/anthropic-api': {
+          target: 'https://api.anthropic.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/anthropic-api/, ''),
+          secure: false,
+        },
+        '/resend-api': {
+          target: 'https://api.resend.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/resend-api/, ''),
           secure: false,
         },
       },

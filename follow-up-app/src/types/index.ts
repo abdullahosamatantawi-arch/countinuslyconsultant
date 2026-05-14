@@ -1,6 +1,6 @@
 export type UserRole = 'admin' | 'engineer' | 'consultant' | 'manager';
 export type ProjectStatus = 'draft' | 'pending_approval' | 'under_construction' | 'completed' | 'cancelled';
-export type StageType = 'architectural' | 'structural' | 'mep' | 'civil_defense' | 'planning' | 'paint' | 'ac' | 'insulation';
+export type StageType = 'architectural' | 'structural' | 'sanitary' | 'electrical' | 'water' | 'gas' | 'civil_defense' | 'telecom';
 export type SubmissionStatus = 'under_review' | 'approved' | 'rejected';
 
 export interface Profile {
@@ -53,6 +53,7 @@ export interface ProjectStage {
   description?: string;
   date?: string;
   drawingUrl?: string; // mapped from drawing_url
+  dwgUrl?: string; // mapped from dwg_url
   signatureUrl?: string; // mapped from signature_url
   originalDrawingUrl?: string; // for comparison
   stageType?: StageType | string;
@@ -64,6 +65,7 @@ export interface StageSubmission {
   version_number: number;
   submitted_by: string; // Profile ID
   file_url: string;
+  dwg_url?: string;
   status: SubmissionStatus;
   created_at?: string;
 }

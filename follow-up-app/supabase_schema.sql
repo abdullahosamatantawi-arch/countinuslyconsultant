@@ -3,7 +3,7 @@
 -- 1. Create custom ENUM types
 CREATE TYPE user_role AS ENUM ('admin', 'engineer', 'consultant');
 CREATE TYPE project_status AS ENUM ('draft', 'pending_approval', 'under_construction', 'completed', 'cancelled');
-CREATE TYPE stage_type AS ENUM ('architectural', 'structural', 'mep', 'civil_defense', 'planning', 'paint', 'ac', 'insulation');
+CREATE TYPE stage_type AS ENUM ('architectural', 'structural', 'sanitary', 'electrical', 'water', 'gas', 'civil_defense', 'telecom');
 CREATE TYPE stage_status AS ENUM ('pending_submission', 'submitted', 'under_review', 'approved', 'rejected', 'requires_modification');
 CREATE TYPE submission_status AS ENUM ('under_review', 'approved', 'rejected');
 
@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS public.project_stages (
     status stage_status DEFAULT 'pending_submission',
     assigned_reviewer_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     approval_date TIMESTAMP WITH TIME ZONE,
+    drawing_url TEXT,
+    dwg_url TEXT,
+    signature_url TEXT,
+    original_drawing_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -56,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.stage_submissions (
     version_number INTEGER NOT NULL DEFAULT 1,
     submitted_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     file_url TEXT NOT NULL,
+    dwg_url TEXT,
     status submission_status DEFAULT 'under_review',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
