@@ -17,6 +17,14 @@
       "destination": "https://n8n.srv968918.hstgr.cloud/webhook-test/extract-license"
     },
     {
+      "source": "/anthropic-api/:path*",
+      "destination": "https://api.anthropic.com/:path*"
+    },
+    {
+      "source": "/resend-api/:path*",
+      "destination": "https://api.resend.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
