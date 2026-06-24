@@ -918,7 +918,6 @@
                 <input type="password" inputmode="numeric" maxlength="1" class="passcode-input">
                 <input type="password" inputmode="numeric" maxlength="1" class="passcode-input">
                 <input type="password" inputmode="numeric" maxlength="1" class="passcode-input">
-                <input type="password" inputmode="numeric" maxlength="1" class="passcode-input">
             </div>
         </div>
     </div>
@@ -949,6 +948,7 @@
                     <div class="select-wrapper">
                         <select id="region" name="المنطقة" required>
                             <option value="" disabled selected>اختر المنطقة...</option>
+                            <option value="المساجد تحت الدراسة">المساجد تحت الدراسة</option>
                             <option value="الشارقه">الشارقه</option>
                             <option value="المنطقه الوسطى">المنطقه الوسطى</option>
                             <option value="المنطقه الشرقيه">المنطقه الشرقيه</option>
@@ -1097,8 +1097,8 @@
         // Data organized by region
         const formData = {
             'الشارقه': {
-                engineers: ['م/عبدالرحمن الطنطاوي', 'م/محمد طارق', 'م/محمد عاطف', 'م/عبيد الياسي'],
-                plots: ['592', '561', '792', '970', 'A/47', 'A/763', '2564', '6519', '7777', '7466', '814-812', '863-865', '10632', '5624', '1489', '266', '74', '411', '822', '2454', '276', '9267', '4772', '5882', 'p2c-g3', '562', '106']
+                engineers: ['م/عبدالرحمن الطنطاوي', 'م/محمد طارق'],
+                plots: ['592', '561', '792', '970', 'A/763', '2564', '6519', '7777', '7466', '814-812', '863-865', '10632', '5624', '1489', '822', '2454', '276', '9267', '4772', '5882', 'p2c-g3', '562', '175', '6697', '441', '106']
             },
             'المنطقه الوسطى': {
                 engineers: ['م/محمد حمدي'],
@@ -1106,11 +1106,15 @@
             },
             'المنطقه الشرقيه': {
                 engineers: ['م/بابكر الطيب'],
-                plots: ['71', 'M2673', '1148M', '1188', '1863', '243', '2/323', '777', '90', '81/2', '838', '620', 'M1706', '9']
+                plots: ['71', '1148M', '1863', '243', '2/323', '777', '90', '81/2', '838', '620', 'M1706', '9']
             },
             'المساجد الخاصة': {
-                engineers: ['م/محمد حمدي', 'م/بابكر الطيب'],
+                engineers: ['م/بابكر الطيب', 'م/محمد حمدي'],
                 plots: ['1373// B', 'الطريف 4']
+            },
+            'المساجد تحت الدراسة': {
+                engineers: ['م/ عبيد الياسي', 'م/ محمد عاطف', 'م/ معاذ محمد', 'م/عبدالله اسامه'],
+                plots: {'م/ عبيد الياسي': ['160', '547', '586', '8620'], 'م/ محمد عاطف': ['1', '1084', '1430', '175', '384', '5/C', '508', 'A/51', 'C/1043'], 'م/ معاذ محمد': ['109-108', '14/1', '1932', '308'], 'م/عبدالله اسامه': ['1662', '1857', '252', '289', '562', '8204']}
             },
         };
 
@@ -1251,6 +1255,20 @@
         function handleRegionChange() {
             const selectedRegion = regionSelect.value;
 
+            // Handle Work Textarea Label and Placeholder dynamically
+            const workLabel = document.querySelector('label[for="work"]');
+            if (selectedRegion === 'المساجد تحت الدراسة') {
+                if (workLabel) {
+                    workLabel.innerHTML = 'الملاحظات <span class="required">*</span>';
+                }
+                workTextarea.placeholder = 'اكتب الملاحظات...';
+            } else {
+                if (workLabel) {
+                    workLabel.innerHTML = 'الاعمال الجارية في الموقع <span class="required">*</span>';
+                }
+                workTextarea.placeholder = 'اكتب تفاصيل الاعمال الجارية...';
+            }
+
             if (selectedRegion && formData[selectedRegion]) {
                 const data = formData[selectedRegion];
 
@@ -1259,8 +1277,13 @@
                 engineerSelect.disabled = false;
 
                 // Populate plots
-                populateSelect(plotSelect, data.plots, 'اختر رقم القطعة...');
-                plotSelect.disabled = false;
+                if (Array.isArray(data.plots)) {
+                    populateSelect(plotSelect, data.plots, 'اختر رقم القطعة...');
+                    plotSelect.disabled = false;
+                } else {
+                    populateSelect(plotSelect, [], 'اختر رقم القطعة...');
+                    plotSelect.disabled = true;
+                }
 
                 // Remove validation states
                 engineerSelect.closest('.input-group').classList.remove('valid', 'invalid');
@@ -1291,7 +1314,10 @@
                 return '';
             },
             'الاعمال الجاريه في الموقع': (value) => {
-                if (!value.trim()) return 'الرجاء ادخال الاعمال الجارية';
+                const isUnderStudy = regionSelect.value === 'المساجد تحت الدراسة';
+                if (!value.trim()) {
+                    return isUnderStudy ? 'الرجاء ادخال الملاحظات' : 'الرجاء ادخال الاعمال الجارية';
+                }
                 if (value.trim().length < 10) return 'يجب ان يكون الوصف 10 أحرف على الاقل';
                 return '';
             },
@@ -1573,7 +1599,8 @@
             printWin.document.write('<div class="section-content" style="font-size:16px;font-weight:bold;color:' + barColor + ';">' + progress + '%</div>');
 
             // Work details
-            printWin.document.write('<div class="section-title">الأعمال الجارية في الموقع</div>');
+            var workTitle = (region === 'المساجد تحت الدراسة') ? 'الملاحظات' : 'الأعمال الجارية في الموقع';
+            printWin.document.write('<div class="section-title">' + workTitle + '</div>');
             printWin.document.write('<div class="work-box">' + workHtml + '</div>');
 
             // Signatures
@@ -1692,6 +1719,22 @@
         // Region change - populate dependent dropdowns
         regionSelect.addEventListener('change', handleRegionChange);
 
+        // Engineer change - populate dependent plots (for objects)
+        engineerSelect.addEventListener('change', () => {
+            const selectedRegion = regionSelect.value;
+            const selectedEngineer = engineerSelect.value;
+            if (selectedRegion && formData[selectedRegion]) {
+                const data = formData[selectedRegion];
+                if (data.plots && !Array.isArray(data.plots)) {
+                    const plots = data.plots[selectedEngineer] || [];
+                    populateSelect(plotSelect, plots, 'اختر رقم القطعة...');
+                    plotSelect.disabled = false;
+                    plotSelect.closest('.input-group').classList.remove('valid', 'invalid');
+                    previousProgressContainer.classList.add('hidden');
+                }
+            }
+        });
+
         // Plot change - check previous progress
         plotSelect.addEventListener('change', checkPreviousProgress);
 
@@ -1776,7 +1819,7 @@
         // ===== Password Guard Logic =====
         const guard = document.getElementById('password-guard');
         const passcodeInputs = document.querySelectorAll('.passcode-input');
-        const CORRECT_PASSCODE = '12345'; // الافتراضي هو 12345
+        const CORRECT_PASSCODE = '2026'; // الباسورد الجديد هو 2026
 
         // التحقق مما إذا كان المستخدم مسجلاً بالفعل
         if (sessionStorage.getItem('authorized') === 'true') {

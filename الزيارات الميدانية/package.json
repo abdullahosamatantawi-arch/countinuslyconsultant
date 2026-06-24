@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0"
   }

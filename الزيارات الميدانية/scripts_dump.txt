@@ -1,0 +1,754 @@
+--- Script 0 ---
+
+        /**
+         * ادارة بناء ورعاية المساجد - التقارير اليومية
+         * Handles validation, dependent dropdowns, file preview, and submission to n8n form
+         */
+
+        const FORM_URL = 'https://n8n.srv968918.hstgr.cloud/webhook/form_new2026';
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dhyw_gFmT0_0d_wzNnCBFDgchUvnlJoSd3U2Ni42CWg/export?format=csv&gid=0';
+
+        // Data organized by region
+        const formData = {
+            'الشارقه': {
+                engineers: ['م/عبدالرحمن الطنطاوي', 'م/محمد طارق', 'م/محمد عاطف', 'م/عبيد الياسي'],
+                plots: ['592', '561', '792', '970', 'A/47', 'A/763', '2564', '6519', '7777', '7466', '814-812', '863-865', '10632', '5624', '1489', '266', '74', '411', '822', '2454', '276', '9267', '4772', '5882', 'p2c-g3', '562', '106']
+            },
+            'المنطقه الوسطى': {
+                engineers: ['م/محمد حمدي'],
+                plots: ['3726', '2856', '1448', '877', '476', '6003', '1133', '137', '6269', '625', '285', '619', '44', '561', '82']
+            },
+            'المنطقه الشرقيه': {
+                engineers: ['م/بابكر الطيب'],
+                plots: ['71', 'M2673', '1148M', '1188', '1863', '243', '2/323', '777', '90', '81/2', '838', '620', 'M1706', '9']
+            },
+            'المساجد الخاصة': {
+                engineers: ['م/محمد حمدي', 'م/بابكر الطيب'],
+                plots: ['1373// B', 'الطريف 4']
+            },
+        };
+
+        // DOM Elements
+        const form = document.getElementById('report-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const successMessage = document.getElementById('success-message');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const regionSelect = document.getElementById('region');
+        const engineerSelect = document.getElementById('engineer');
+        const plotSelect = document.getElementById('plot');
+        const workTextarea = document.getElementById('work');
+        const progressInput = document.getElementById('progress');
+        const progressBar = document.getElementById('progress-bar');
+        const imagesInput = document.getElementById('images');
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const filePreview = document.getElementById('file-preview');
+
+        // Previous Progress Elements
+        const previousProgressContainer = document.getElementById('previous-progress-container');
+        const previousProgressValue = document.getElementById('previous-progress-value');
+
+        // Store selected files
+        let selectedFiles = [];
+
+        // Store Sheet Data
+        let sheetData = [];
+
+        /**
+         * Fetch and Parse Google Sheet Data
+         */
+        function fetchSheetData() {
+            console.log('📥 Fetching sheet data from:', SHEET_URL);
+
+            // Set a timeout to catch silent CORS failures
+            const fetchTimeout = setTimeout(() => {
+                if (sheetData.length === 0) {
+                    console.warn('⚠️ Fetch timeout: Data taking too long to load. Likely CORS restriction.');
+                    sheetData = 'TIMEOUT';
+                    if (plotSelect.value) {
+                        checkPreviousProgress();
+                    }
+                }
+            }, 5000);
+
+            Papa.parse(SHEET_URL, {
+                download: true,
+                header: true,
+                complete: function (results) {
+                    clearTimeout(fetchTimeout);
+                    console.log('✅ Sheet data loaded:', results.data.length, 'rows');
+                    sheetData = results.data;
+
+                    if (plotSelect.value) {
+                        checkPreviousProgress();
+                    }
+                },
+                error: function (err) {
+                    clearTimeout(fetchTimeout);
+                    console.error('❌ Error fetching sheet data:', err);
+                    sheetData = 'ERROR';
+                    if (plotSelect.value) {
+                        checkPreviousProgress();
+                    }
+                }
+            });
+        }
+
+        /**
+         * Check for Previous Progress based on Plot Number
+         */
+        function checkPreviousProgress() {
+            const currentPlot = plotSelect.value;
+
+            if (!currentPlot) {
+                previousProgressContainer.classList.add('hidden');
+                return;
+            }
+
+            // Case: Fetch Error or Timeout (CORS or Network)
+            if (sheetData === 'ERROR' || sheetData === 'TIMEOUT') {
+                previousProgressContainer.classList.remove('hidden', 'fetching');
+                previousProgressValue.textContent = 'يتطلب تشغيل السيرفر المحلي (Local Server)';
+                previousProgressValue.style.color = '#ef4444';
+                return;
+            }
+
+            // Case: Still Fetching
+            if (sheetData.length === 0) {
+                previousProgressContainer.classList.remove('hidden');
+                previousProgressContainer.classList.add('fetching');
+                previousProgressValue.textContent = 'جاري التحميل';
+                previousProgressValue.style.color = '';
+                return;
+            }
+
+            previousProgressContainer.classList.remove('fetching');
+            previousProgressValue.style.color = '';
+
+            // Find the row with matching plot number
+            const matchedRow = sheetData.find(row => {
+                const plotValue = row['رقم القطعة'] || row['رقم القطعه'] || row['Plot Number'];
+                if (plotValue) {
+                    return String(plotValue).trim() === String(currentPlot).trim();
+                }
+                return false;
+            });
+
+            if (matchedRow) {
+                const progressValue = matchedRow['نسبة الإنجاز'] || matchedRow['نسبة الانجاز'] || matchedRow['Progress'];
+                if (progressValue !== undefined && progressValue !== '') {
+                    previousProgressValue.textContent = progressValue + '%';
+                    previousProgressContainer.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            previousProgressContainer.classList.add('hidden');
+        }
+
+        /**
+         * Populate a select element with options
+         */
+        function populateSelect(selectElement, options, placeholder) {
+            selectElement.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                selectElement.appendChild(opt);
+            });
+        }
+
+        /**
+         * Handle region change - update engineers and plots
+         */
+        function handleRegionChange() {
+            const selectedRegion = regionSelect.value;
+
+            if (selectedRegion && formData[selectedRegion]) {
+                const data = formData[selectedRegion];
+
+                // Populate engineers
+                populateSelect(engineerSelect, data.engineers, 'اختر المهندس...');
+                engineerSelect.disabled = false;
+
+                // Populate plots
+                populateSelect(plotSelect, data.plots, 'اختر رقم القطعة...');
+                plotSelect.disabled = false;
+
+                // Remove validation states
+                engineerSelect.closest('.input-group').classList.remove('valid', 'invalid');
+                plotSelect.closest('.input-group').classList.remove('valid', 'invalid');
+            } else {
+                // Reset and disable
+                populateSelect(engineerSelect, [], 'اختر المهندس...');
+                engineerSelect.disabled = true;
+                populateSelect(plotSelect, [], 'اختر رقم القطعة...');
+                plotSelect.disabled = true;
+            }
+            // Hide previous progress on region change
+            previousProgressContainer.classList.add('hidden');
+        }
+
+        // Validation Rules
+        const validators = {
+            'المنطقة': (value) => {
+                if (!value) return 'الرجاء اختيار المنطقة';
+                return '';
+            },
+            'اسم المهندس': (value) => {
+                if (!value) return 'الرجاء اختيار المهندس';
+                return '';
+            },
+            'رقم القطعه': (value) => {
+                if (!value) return 'الرجاء اختيار رقم القطعة';
+                return '';
+            },
+            'الاعمال الجاريه في الموقع': (value) => {
+                if (!value.trim()) return 'الرجاء ادخال الاعمال الجارية';
+                if (value.trim().length < 10) return 'يجب ان يكون الوصف 10 أحرف على الاقل';
+                return '';
+            },
+            'نسبة الانجاز': (value) => {
+                if (!value) return 'الرجاء ادخال نسبة الانجاز';
+                const num = parseFloat(value);
+                if (isNaN(num) || num < 0 || num > 100) return 'يجب ان تكون النسبة بين 0 و 100';
+                return '';
+            }
+        };
+
+        /**
+         * Validate a single input field
+         */
+        function validateInput(input) {
+            const group = input.closest('.input-group');
+            const errorElement = group.querySelector('.error-message');
+            const validator = validators[input.name];
+
+            if (!validator) return true;
+
+            const error = validator(input.value);
+
+            if (error) {
+                group.classList.remove('valid');
+                group.classList.add('invalid');
+                if (errorElement) errorElement.textContent = error;
+                return false;
+            } else {
+                group.classList.remove('invalid');
+                group.classList.add('valid');
+                if (errorElement) errorElement.textContent = '';
+                return true;
+            }
+        }
+
+        /**
+         * Validate all required inputs
+         */
+        function validateForm() {
+            const inputs = [regionSelect, engineerSelect, plotSelect, workTextarea, progressInput];
+            let isValid = true;
+
+            inputs.forEach((input) => {
+                if (!validateInput(input)) {
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+        /**
+         * Update progress bar based on input
+         */
+        function updateProgressBar() {
+            const value = parseFloat(progressInput.value) || 0;
+            const clamped = Math.min(100, Math.max(0, value));
+            progressBar.style.width = `${clamped}%`;
+
+            // Change color based on progress
+            if (clamped < 30) {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+            } else if (clamped < 70) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #06b6d4)';
+            }
+        }
+
+        /**
+         * Handle file selection
+         */
+        function handleFiles(files) {
+            const validFiles = Array.from(files).filter(file => {
+                const isImage = file.type.startsWith('image/');
+                const isSmallEnough = file.size <= 5 * 1024 * 1024; // 5MB
+                return isImage && isSmallEnough;
+            });
+
+            selectedFiles = [...selectedFiles, ...validFiles];
+            renderFilePreviews();
+        }
+
+        /**
+         * Render file previews
+         */
+        function renderFilePreviews() {
+            filePreview.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'file-preview-item';
+                    div.innerHTML = `
+                <img src="${e.target.result}" alt="${file.name}">
+                <button type="button" class="remove-file" data-index="${index}">×</button>
+            `;
+                    filePreview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        /**
+         * Remove file from selection
+         */
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFilePreviews();
+        }
+
+        /**
+         * Set button state
+         */
+        function setButtonState(state) {
+            submitBtn.classList.remove('loading', 'success');
+            submitBtn.disabled = false;
+
+            if (state === 'loading') {
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+            } else if (state === 'success') {
+                submitBtn.classList.add('success');
+                submitBtn.disabled = true;
+            }
+        }
+
+        /**
+         * Submit form data
+         */
+        async function submitForm() {
+            const formDataObj = new FormData();
+
+            // Add text fields
+            formDataObj.append('المنطقة', regionSelect.value);
+            formDataObj.append('اسم المهندس', engineerSelect.value);
+            formDataObj.append('رقم القطعه', plotSelect.value);
+            formDataObj.append('الاعمال الجاريه في الموقع', workTextarea.value);
+            formDataObj.append('نسبة الانجاز', progressInput.value);
+
+            // Add files
+            selectedFiles.forEach((file) => {
+                formDataObj.append('ارفاق صور', file);
+            });
+
+            try {
+                // Submit to n8n webhook
+                const n8nPromise = fetch(FORM_URL, {
+                    method: 'POST',
+                    body: formDataObj
+                });
+
+                // Prepare JSON data for Resend email function
+                const emailData = {
+                    region: regionSelect.value,
+                    engineer: engineerSelect.value,
+                    plot: plotSelect.value,
+                    progress: progressInput.value,
+                    work: workTextarea.value
+                };
+
+                // Trigger Netlify Serverless Function to send email
+                const emailPromise = fetch('/.netlify/functions/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(emailData)
+                }).catch(err => console.error('Email function error:', err));
+
+                // Wait for both to complete
+                await Promise.allSettled([n8nPromise, emailPromise]);
+
+                return { success: true };
+            } catch (error) {
+                console.error('Submission error:', error);
+                // n8n forms might have CORS issues but still process the request
+                return { success: true };
+            }
+        }
+
+        /**
+         * Show success message
+         */
+        function showSuccess() {
+            document.querySelector('.form-card').classList.add('success-active');
+            successMessage.classList.add('show');
+        }
+
+        /**
+         * Generate a government-style PDF report for the field visit
+         */
+        function generateVisitPDF() {
+            var region = regionSelect.value || 'غير محدد';
+            var engineer = engineerSelect.value || 'غير محدد';
+            var plot = plotSelect.value || 'غير محدد';
+            var work = workTextarea.value || 'لا يوجد';
+            var progress = progressInput.value || '0';
+            var logoSrc = document.querySelector('.logo-image').src;
+
+            var now = new Date();
+            var dateStr = now.toLocaleDateString('ar-AE', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+            var timeStr = now.toLocaleTimeString('ar-AE', { hour: '2-digit', minute: '2-digit' });
+            var reportNum = 'FV-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+            var progressNum = parseFloat(progress) || 0;
+            var barColor = progressNum < 30 ? '#dc3545' : progressNum < 70 ? '#f59e0b' : '#0d6938';
+            var workHtml = work.replace(/\n/g, '<br>');
+
+            // Open a new window for printing (bypasses html2canvas issues entirely)
+            var printWin = window.open('', '_blank', 'width=800,height=1000');
+            if (!printWin) {
+                alert('يرجى السماح بالنوافذ المنبثقة لتوليد التقرير');
+                return;
+            }
+
+            printWin.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head>');
+            printWin.document.write('<meta charset="UTF-8">');
+            printWin.document.write('<title>تقرير زيارة ميدانية - ' + reportNum + '</title>');
+            printWin.document.write('<style>');
+            printWin.document.write('* { margin: 0; padding: 0; box-sizing: border-box; }');
+            printWin.document.write('body { font-family: Arial, sans-serif; direction: rtl; padding: 40px; background: #fff; color: #333; }');
+            printWin.document.write('@media print { body { padding: 20px; } @page { size: A4; margin: 15mm; } }');
+            printWin.document.write('table { width: 100%; border-collapse: collapse; }');
+            printWin.document.write('.header-bar { height: 6px; background: #0d6938; margin-bottom: 25px; }');
+            printWin.document.write('.dept-name { font-size: 22px; color: #0d6938; font-weight: bold; margin-bottom: 5px; }');
+            printWin.document.write('.dept-sub { font-size: 16px; color: #555; }');
+            printWin.document.write('.logo-cell { text-align: left; vertical-align: middle; width: 160px; }');
+            printWin.document.write('.logo-cell img { width: 130px; height: auto; }');
+            printWin.document.write('.report-title { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 15px; }');
+            printWin.document.write('.report-title h2 { font-size: 22px; color: #1a1a2e; margin-bottom: 8px; }');
+            printWin.document.write('.report-title p { color: #666; font-size: 14px; }');
+            printWin.document.write('.info-table { margin-bottom: 25px; background: #f8f8f8; font-size: 14px; }');
+            printWin.document.write('.info-table td { padding: 12px; border: 1px solid #ddd; }');
+            printWin.document.write('.section-title { color: #0d6938; border-right: 4px solid #d4af37; padding-right: 10px; margin-bottom: 8px; font-size: 16px; font-weight: bold; }');
+            printWin.document.write('.section-content { padding-right: 14px; font-size: 15px; margin-bottom: 20px; }');
+            printWin.document.write('.work-box { padding: 15px; border: 1px solid #ddd; font-size: 14px; line-height: 1.8; min-height: 100px; margin-bottom: 30px; }');
+            printWin.document.write('.sig-table { margin-top: 50px; text-align: center; }');
+            printWin.document.write('.sig-table td { width: 50%; padding: 10px; }');
+            printWin.document.write('.sig-label { font-weight: bold; margin-bottom: 40px; font-size: 14px; }');
+            printWin.document.write('.sig-line { width: 160px; border-top: 1px solid #000; margin: 0 auto; }');
+            printWin.document.write('.footer { text-align: center; margin-top: 40px; border-top: 1px solid #eee; padding-top: 12px; font-size: 11px; color: #999; }');
+            printWin.document.write('</style>');
+            printWin.document.write('</head><body>');
+
+            // Header bar
+            printWin.document.write('<div class="header-bar"></div>');
+
+            // Logo + Department name
+            printWin.document.write('<table style="margin-bottom:30px;"><tr>');
+            printWin.document.write('<td style="text-align:right;vertical-align:middle;">');
+            printWin.document.write('<div class="dept-name">دائرة الشؤون الإسلامية </div>');
+            printWin.document.write('<div class="dept-sub">إدارة بناء ورعاية المساجد</div>');
+            printWin.document.write('</td>');
+            printWin.document.write('<td class="logo-cell">');
+            printWin.document.write('<img src="' + logoSrc + '">');
+            printWin.document.write('</td>');
+            printWin.document.write('</tr></table>');
+
+            // Report title
+            printWin.document.write('<div class="report-title">');
+            printWin.document.write('<h2>تقرير زيارة ميدانية</h2>');
+            printWin.document.write('<p>رقم التقرير: ' + reportNum + '</p>');
+            printWin.document.write('</div>');
+
+            // Info table
+            printWin.document.write('<table class="info-table">');
+            printWin.document.write('<tr><td><b>تاريخ الزيارة:</b> ' + dateStr + '</td>');
+            printWin.document.write('<td><b>وقت الزيارة:</b> ' + timeStr + '</td></tr>');
+            printWin.document.write('<tr><td><b>المنطقة:</b> ' + region + '</td>');
+            printWin.document.write('<td><b>رقم القطعة:</b> ' + plot + '</td></tr>');
+            printWin.document.write('</table>');
+
+            // Engineer
+            printWin.document.write('<div class="section-title">المهندس المشرف</div>');
+            printWin.document.write('<div class="section-content">' + engineer + '</div>');
+
+            // Progress
+            printWin.document.write('<div class="section-title">نسبة الإنجاز الحالية</div>');
+            printWin.document.write('<div class="section-content" style="font-size:16px;font-weight:bold;color:' + barColor + ';">' + progress + '%</div>');
+
+            // Work details
+            printWin.document.write('<div class="section-title">الأعمال الجارية في الموقع</div>');
+            printWin.document.write('<div class="work-box">' + workHtml + '</div>');
+
+            // Signatures
+            printWin.document.write('<table class="sig-table"><tr>');
+            printWin.document.write('<td><div class="sig-label">توقيع المهندس المشرف</div><div class="sig-line"></div></td>');
+            printWin.document.write('<td><div class="sig-label">توقيع مدير الإدارة مهندس عبدالله ابوبكر الياسي</div><div class="sig-line"></div></td>');
+            printWin.document.write('</tr></table>');
+
+            // Footer
+            printWin.document.write('<div class="footer">صدر هذا التقرير آلياً من نظام الزيارات الميدانية - دائرة الشؤون الإسلامية</div>');
+
+            // If there are attached images, read them and add a photos page
+            if (selectedFiles.length > 0) {
+                // Read all files as data URLs
+                var imagePromises = selectedFiles.map(function (file) {
+                    return new Promise(function (resolve) {
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            resolve({ name: file.name, dataUrl: e.target.result });
+                        };
+                        reader.onerror = function () {
+                            resolve(null);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                });
+
+                Promise.all(imagePromises).then(function (images) {
+                    var validImages = images.filter(function (img) { return img !== null; });
+
+                    if (validImages.length > 0) {
+                        // Photo attachments page with page break
+                        printWin.document.write('<div style="page-break-before: always;"></div>');
+                        printWin.document.write('<div class="header-bar"></div>');
+                        printWin.document.write('<div style="text-align:center;margin-bottom:25px;">');
+                        printWin.document.write('<h2 style="font-size:20px;color:#1a1a2e;">ملحق الصور الميدانية</h2>');
+                        printWin.document.write('<p style="color:#666;font-size:13px;">رقم التقرير: ' + reportNum + ' — عدد الصور: ' + validImages.length + '</p>');
+                        printWin.document.write('</div>');
+
+                        // Images grid - 2 per row
+                        printWin.document.write('<table style="width:100%;border-collapse:collapse;">');
+                        for (var i = 0; i < validImages.length; i++) {
+                            if (i % 2 === 0) {
+                                printWin.document.write('<tr>');
+                            }
+                            printWin.document.write('<td style="width:50%;padding:8px;text-align:center;vertical-align:top;">');
+                            printWin.document.write('<img src="' + validImages[i].dataUrl + '" style="max-width:100%;max-height:300px;border:1px solid #ddd;border-radius:4px;">');
+                            printWin.document.write('<div style="font-size:11px;color:#888;margin-top:4px;">صورة ' + (i + 1) + '</div>');
+                            printWin.document.write('</td>');
+                            if (i % 2 === 1 || i === validImages.length - 1) {
+                                // If odd number of images, add empty cell
+                                if (i === validImages.length - 1 && i % 2 === 0) {
+                                    printWin.document.write('<td></td>');
+                                }
+                                printWin.document.write('</tr>');
+                            }
+                        }
+                        printWin.document.write('</table>');
+
+                        printWin.document.write('<div class="footer">ملحق صور - تقرير زيارة ميدانية ' + reportNum + '</div>');
+                    }
+
+                    // Close document and trigger print
+                    printWin.document.write('</body></html>');
+                    printWin.document.close();
+
+                    printWin.onload = function () {
+                        setTimeout(function () {
+                            printWin.print();
+                        }, 500);
+                    };
+                });
+            } else {
+                // No images - close and print directly
+                printWin.document.write('</body></html>');
+                printWin.document.close();
+
+                printWin.onload = function () {
+                    setTimeout(function () {
+                        printWin.print();
+                    }, 500);
+                };
+            }
+        }
+
+        /**
+         * Reset form
+         */
+        function resetForm() {
+            form.reset();
+            selectedFiles = [];
+            filePreview.innerHTML = '';
+            progressBar.style.width = '0%';
+            setButtonState('default');
+            document.querySelector('.form-card').classList.remove('success-active');
+            successMessage.classList.remove('show');
+
+            // Reset dependent dropdowns
+            populateSelect(engineerSelect, [], 'اختر المهندس...');
+            engineerSelect.disabled = true;
+            populateSelect(plotSelect, [], 'اختر رقم القطعة...');
+            plotSelect.disabled = true;
+
+            // Remove validation classes
+            document.querySelectorAll('.input-group').forEach((group) => {
+                group.classList.remove('valid', 'invalid');
+            });
+        }
+
+        // Initialize: disable dependent dropdowns
+        engineerSelect.disabled = true;
+        plotSelect.disabled = true;
+
+        // Event Listeners
+
+        // Region change - populate dependent dropdowns
+        regionSelect.addEventListener('change', handleRegionChange);
+
+        // Plot change - check previous progress
+        plotSelect.addEventListener('change', checkPreviousProgress);
+
+        // Validation on change/blur
+        [regionSelect, engineerSelect, plotSelect, workTextarea, progressInput].forEach((input) => {
+            input.addEventListener('change', () => validateInput(input));
+            input.addEventListener('blur', () => validateInput(input));
+        });
+
+        // Initialize Data
+        fetchSheetData();
+
+        // Progress bar update
+        progressInput.addEventListener('input', updateProgressBar);
+
+        // File input
+        imagesInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Drag and drop
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.add('dragover');
+        });
+
+        fileDropZone.addEventListener('dragleave', () => {
+            fileDropZone.classList.remove('dragover');
+        });
+
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // Remove file button
+        filePreview.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-file')) {
+                const index = parseInt(e.target.dataset.index);
+                removeFile(index);
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                // Focus first invalid input
+                const firstInvalid = form.querySelector('.input-group.invalid select, .input-group.invalid textarea, .input-group.invalid input');
+                if (firstInvalid) firstInvalid.focus();
+                return;
+            }
+
+            setButtonState('loading');
+
+            const result = await submitForm();
+
+            if (result.success) {
+                setButtonState('success');
+                generateVisitPDF();
+                setTimeout(() => {
+                    showSuccess();
+                }, 800);
+            } else {
+                setButtonState('default');
+                alert('حدث خطأ أثناء الارسال. يرجى المحاولة مرة أخرى.');
+            }
+        });
+
+        // Reset button
+        resetBtn.addEventListener('click', resetForm);
+
+        // Accessibility: Allow form reset with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && successMessage.classList.contains('show')) {
+                resetForm();
+            }
+        });
+
+        // ===== Password Guard Logic =====
+        const guard = document.getElementById('password-guard');
+        const passcodeInputs = document.querySelectorAll('.passcode-input');
+        const CORRECT_PASSCODE = '2026'; // الباسورد الجديد هو 2026
+
+        // التحقق مما إذا كان المستخدم مسجلاً بالفعل
+        if (sessionStorage.getItem('authorized') === 'true') {
+            guard.classList.add('hidden');
+        }
+
+        passcodeInputs.forEach((input, index) => {
+            // التعامل مع الإدخال
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+
+                // السماح بالأرقام فقط
+                if (value && !/^\d+$/.test(value)) {
+                    input.value = '';
+                    return;
+                }
+
+                if (value.length === 1 && index < passcodeInputs.length - 1) {
+                    passcodeInputs[index + 1].focus();
+                }
+
+                checkPasscode();
+            });
+
+            // التعامل مع زر الرجوع
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) {
+                    passcodeInputs[index - 1].focus();
+                }
+            });
+
+            // تحسين تجربة الهاتف المحمول
+            input.addEventListener('focus', () => {
+                input.select();
+            });
+        });
+
+        function checkPasscode() {
+            const entered = Array.from(passcodeInputs).map(i => i.value).join('');
+            if (entered.length === CORRECT_PASSCODE.length) {
+                if (entered === CORRECT_PASSCODE) {
+                    // نجاح
+                    sessionStorage.setItem('authorized', 'true');
+                    guard.style.opacity = '0';
+                    setTimeout(() => {
+                        guard.classList.add('hidden');
+                    }, 500);
+                } else {
+                    // خطأ
+                    passcodeInputs.forEach(i => {
+                        i.classList.add('error');
+                        setTimeout(() => i.classList.remove('error'), 600);
+                        i.value = '';
+                    });
+                    passcodeInputs[0].focus();
+                }
+            }
+        }
+
+    
+
